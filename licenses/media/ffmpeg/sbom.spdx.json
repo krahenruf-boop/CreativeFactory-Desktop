@@ -1,0 +1,510 @@
+{
+  "SPDXID": "SPDXRef-DOCUMENT",
+  "spdxVersion": "SPDX-2.3",
+  "name": "SBOM-SPDX-ffmpeg-9.0.1",
+  "creationInfo": {
+    "created": "2026-09-17T03:53:18Z",
+    "creators": [
+      "Tool: https://github.com/Homebrew/brew@7.0.2"
+    ]
+  },
+  "dataLicense": "CC0-1.0",
+  "documentNamespace": "https://formulae.brew.sh/spdx/ffmpeg-9.0.1.json",
+  "documentDescribes": [
+    "SPDXRef-Archive-ffmpeg-src",
+    "SPDXRef-Package-SPDXRef-dav1d-1.5.4",
+    "SPDXRef-Package-SPDXRef-mpg123-1.33.7",
+    "SPDXRef-Package-SPDXRef-lame-4.0",
+    "SPDXRef-Package-SPDXRef-libvmaf-3.2.0",
+    "SPDXRef-Package-SPDXRef-libvpx-1.17.0",
+    "SPDXRef-Package-SPDXRef-ca-certificates-2026-08-13",
+    "SPDXRef-Package-SPDXRef-openssl@3-3.6.4",
+    "SPDXRef-Package-SPDXRef-opus-1.6.1",
+    "SPDXRef-Package-SPDXRef-sdl3-3.4.16",
+    "SPDXRef-Package-SPDXRef-sdl2-compat-2.32.72",
+    "SPDXRef-Package-SPDXRef-svt-av1-4.2.0",
+    "SPDXRef-Package-SPDXRef-x264-r3222",
+    "SPDXRef-Package-SPDXRef-x265-4.3",
+    "SPDXRef-Package-SPDXRef-xz-5.8.3",
+    "SPDXRef-Compiler",
+    "SPDXRef-Bottle-ffmpeg"
+  ],
+  "files": [
+    {
+      "SPDXID": "SPDXRef-File-ffmpeg",
+      "fileName": "ffmpeg-9.0.1.tar.xz",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "cf38e0e28c7e5605942c4a77755349b0145804a397af37eb1fb4c77cb237f635"
+        }
+      ]
+    }
+  ],
+  "packages": [
+    {
+      "SPDXID": "SPDXRef-Archive-ffmpeg-src",
+      "name": "ffmpeg",
+      "versionInfo": "9.0.1",
+      "filesAnalyzed": false,
+      "licenseDeclared": "NOASSERTION",
+      "builtDate": "2026-08-12T03:35:34Z",
+      "licenseConcluded": "GPL-3.0-or-later",
+      "downloadLocation": "https://ffmpeg.org/releases/ffmpeg-9.0.1.tar.xz",
+      "copyrightText": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceLocator": "pkg:brew/homebrew/core/ffmpeg@9.0.1",
+          "referenceType": "purl"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "cf38e0e28c7e5605942c4a77755349b0145804a397af37eb1fb4c77cb237f635"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-Package-SPDXRef-dav1d-1.5.4",
+      "name": "dav1d",
+      "versionInfo": "1.5.4",
+      "filesAnalyzed": false,
+      "licenseDeclared": "NOASSERTION",
+      "licenseConcluded": "BSD-2-Clause",
+      "downloadLocation": "https://ghcr.io/v2/homebrew/core/dav1d/blobs/sha256:7c717fd8cb95695007552885327049a18e741d3bfe3254e96a923b3c90ed4875",
+      "copyrightText": "NOASSERTION",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "7c717fd8cb95695007552885327049a18e741d3bfe3254e96a923b3c90ed4875"
+        }
+      ],
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceLocator": "pkg:brew/dav1d@1.5.4",
+          "referenceType": "purl"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-Package-SPDXRef-mpg123-1.33.7",
+      "name": "mpg123",
+      "versionInfo": "1.33.7",
+      "filesAnalyzed": false,
+      "licenseDeclared": "NOASSERTION",
+      "licenseConcluded": "LGPL-2.1-only",
+      "downloadLocation": "https://ghcr.io/v2/homebrew/core/mpg123/blobs/sha256:39373e6056e4816ff08de821851358ab0a6bbf35708f42544b184722da08315c",
+      "copyrightText": "NOASSERTION",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "39373e6056e4816ff08de821851358ab0a6bbf35708f42544b184722da08315c"
+        }
+      ],
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceLocator": "pkg:brew/mpg123@1.33.7",
+          "referenceType": "purl"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-Package-SPDXRef-lame-4.0",
+      "name": "lame",
+      "versionInfo": "4.0",
+      "filesAnalyzed": false,
+      "licenseDeclared": "NOASSERTION",
+      "licenseConcluded": "LGPL-2.0-or-later",
+      "downloadLocation": "https://ghcr.io/v2/homebrew/core/lame/blobs/sha256:c7803cbfacfe405583edef9d81056088008b8cb1e8efca6c2ab1983e1af35de6",
+      "copyrightText": "NOASSERTION",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "c7803cbfacfe405583edef9d81056088008b8cb1e8efca6c2ab1983e1af35de6"
+        }
+      ],
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceLocator": "pkg:brew/lame@4.0",
+          "referenceType": "purl"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-Package-SPDXRef-libvmaf-3.2.0",
+      "name": "libvmaf",
+      "versionInfo": "3.2.0",
+      "filesAnalyzed": false,
+      "licenseDeclared": "NOASSERTION",
+      "licenseConcluded": "BSD-2-Clause-Patent",
+      "downloadLocation": "https://ghcr.io/v2/homebrew/core/libvmaf/blobs/sha256:ccbad37293ef5c2d9d251dc15c5c952afc0402dfec67edc282bc32e88d9e3717",
+      "copyrightText": "NOASSERTION",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "ccbad37293ef5c2d9d251dc15c5c952afc0402dfec67edc282bc32e88d9e3717"
+        }
+      ],
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceLocator": "pkg:brew/libvmaf@3.2.0",
+          "referenceType": "purl"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-Package-SPDXRef-libvpx-1.17.0",
+      "name": "libvpx",
+      "versionInfo": "1.17.0",
+      "filesAnalyzed": false,
+      "licenseDeclared": "NOASSERTION",
+      "licenseConcluded": "BSD-3-Clause",
+      "downloadLocation": "https://ghcr.io/v2/homebrew/core/libvpx/blobs/sha256:e398b92b26506522e80a74dd0b584bcfb8bc96ba3eaf1003ee26c295511af381",
+      "copyrightText": "NOASSERTION",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "e398b92b26506522e80a74dd0b584bcfb8bc96ba3eaf1003ee26c295511af381"
+        }
+      ],
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceLocator": "pkg:brew/libvpx@1.17.0",
+          "referenceType": "purl"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-Package-SPDXRef-ca-certificates-2026-08-13",
+      "name": "ca-certificates",
+      "versionInfo": "2026-08-13",
+      "filesAnalyzed": false,
+      "licenseDeclared": "NOASSERTION",
+      "licenseConcluded": "MPL-2.0",
+      "downloadLocation": "https://ghcr.io/v2/homebrew/core/ca-certificates/blobs/sha256:37f5c1413f65c05d86e1279d76699f5d27ad77f8126f5776db13f3d64ee3d010",
+      "copyrightText": "NOASSERTION",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "37f5c1413f65c05d86e1279d76699f5d27ad77f8126f5776db13f3d64ee3d010"
+        }
+      ],
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceLocator": "pkg:brew/ca-certificates@2026-08-13",
+          "referenceType": "purl"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-Package-SPDXRef-openssl@3-3.6.4",
+      "name": "openssl@3",
+      "versionInfo": "3.6.4",
+      "filesAnalyzed": false,
+      "licenseDeclared": "NOASSERTION",
+      "licenseConcluded": "Apache-2.0",
+      "downloadLocation": "https://ghcr.io/v2/homebrew/core/openssl/3/blobs/sha256:51eb22ee51d7b6e678ef5dc2be234adb46f9f541ac1d98e5ed08c9a7535789dc",
+      "copyrightText": "NOASSERTION",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "51eb22ee51d7b6e678ef5dc2be234adb46f9f541ac1d98e5ed08c9a7535789dc"
+        }
+      ],
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceLocator": "pkg:brew/openssl%403@3.6.4",
+          "referenceType": "purl"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-Package-SPDXRef-opus-1.6.1",
+      "name": "opus",
+      "versionInfo": "1.6.1",
+      "filesAnalyzed": false,
+      "licenseDeclared": "NOASSERTION",
+      "licenseConcluded": "BSD-3-Clause",
+      "downloadLocation": "https://ghcr.io/v2/homebrew/core/opus/blobs/sha256:ce5518990c125d46b25500baf13150ea733a0638d50fdd57afb1500def871b06",
+      "copyrightText": "NOASSERTION",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "ce5518990c125d46b25500baf13150ea733a0638d50fdd57afb1500def871b06"
+        }
+      ],
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceLocator": "pkg:brew/opus@1.6.1",
+          "referenceType": "purl"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-Package-SPDXRef-sdl3-3.4.16",
+      "name": "sdl3",
+      "versionInfo": "3.4.16",
+      "filesAnalyzed": false,
+      "licenseDeclared": "NOASSERTION",
+      "licenseConcluded": "Zlib",
+      "downloadLocation": "https://ghcr.io/v2/homebrew/core/sdl3/blobs/sha256:12a5b5c683352e8443f9374aa13c487aa435a85c21cc32167be6520704874a27",
+      "copyrightText": "NOASSERTION",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "12a5b5c683352e8443f9374aa13c487aa435a85c21cc32167be6520704874a27"
+        }
+      ],
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceLocator": "pkg:brew/sdl3@3.4.16",
+          "referenceType": "purl"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-Package-SPDXRef-sdl2-compat-2.32.72",
+      "name": "sdl2-compat",
+      "versionInfo": "2.32.72",
+      "filesAnalyzed": false,
+      "licenseDeclared": "NOASSERTION",
+      "licenseConcluded": "Zlib",
+      "downloadLocation": "https://ghcr.io/v2/homebrew/core/sdl2-compat/blobs/sha256:4df9883f271533e36571c11a809fc55d766ee89d3cdef4103eaa61915166b9bd",
+      "copyrightText": "NOASSERTION",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "4df9883f271533e36571c11a809fc55d766ee89d3cdef4103eaa61915166b9bd"
+        }
+      ],
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceLocator": "pkg:brew/sdl2-compat@2.32.72",
+          "referenceType": "purl"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-Package-SPDXRef-svt-av1-4.2.0",
+      "name": "svt-av1",
+      "versionInfo": "4.2.0",
+      "filesAnalyzed": false,
+      "licenseDeclared": "NOASSERTION",
+      "licenseConcluded": "BSD-3-Clause",
+      "downloadLocation": "https://ghcr.io/v2/homebrew/core/svt-av1/blobs/sha256:8d13b4e61bb2a1bc0c8222003c575ffeaf98e6759212747439709f92f88353d3",
+      "copyrightText": "NOASSERTION",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "8d13b4e61bb2a1bc0c8222003c575ffeaf98e6759212747439709f92f88353d3"
+        }
+      ],
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceLocator": "pkg:brew/svt-av1@4.2.0",
+          "referenceType": "purl"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-Package-SPDXRef-x264-r3222",
+      "name": "x264",
+      "versionInfo": "r3222",
+      "filesAnalyzed": false,
+      "licenseDeclared": "NOASSERTION",
+      "licenseConcluded": "GPL-2.0-or-later",
+      "downloadLocation": "https://ghcr.io/v2/homebrew/core/x264/blobs/sha256:e5a7b434d9bd236891bdf8ec5621ec092d358922f9b4a3417059b201fdfd870d",
+      "copyrightText": "NOASSERTION",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "e5a7b434d9bd236891bdf8ec5621ec092d358922f9b4a3417059b201fdfd870d"
+        }
+      ],
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceLocator": "pkg:brew/x264@r3222",
+          "referenceType": "purl"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-Package-SPDXRef-x265-4.3",
+      "name": "x265",
+      "versionInfo": "4.3",
+      "filesAnalyzed": false,
+      "licenseDeclared": "NOASSERTION",
+      "licenseConcluded": "GPL-2.0-or-later",
+      "downloadLocation": "https://ghcr.io/v2/homebrew/core/x265/blobs/sha256:93688303ea9445129620cccc3c824cdc0787ddd4a912f176d687ec6132ddc08b",
+      "copyrightText": "NOASSERTION",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "93688303ea9445129620cccc3c824cdc0787ddd4a912f176d687ec6132ddc08b"
+        }
+      ],
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceLocator": "pkg:brew/x265@4.3",
+          "referenceType": "purl"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-Package-SPDXRef-xz-5.8.3",
+      "name": "xz",
+      "versionInfo": "5.8.3",
+      "filesAnalyzed": false,
+      "licenseDeclared": "NOASSERTION",
+      "licenseConcluded": "0BSD AND GPL-2.0-or-later",
+      "downloadLocation": "https://ghcr.io/v2/homebrew/core/xz/blobs/sha256:e633617fecfc04dd94d7ebab295263d2ffe89aa6c1d21bd0881406a448bac638",
+      "copyrightText": "NOASSERTION",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "e633617fecfc04dd94d7ebab295263d2ffe89aa6c1d21bd0881406a448bac638"
+        }
+      ],
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceLocator": "pkg:brew/xz@5.8.3",
+          "referenceType": "purl"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-Compiler",
+      "name": "clang",
+      "versionInfo": "27.0",
+      "filesAnalyzed": false,
+      "licenseDeclared": "NOASSERTION",
+      "licenseConcluded": "NOASSERTION",
+      "copyrightText": "NOASSERTION",
+      "downloadLocation": "NOASSERTION",
+      "checksums": [],
+      "externalRefs": []
+    },
+    {
+      "SPDXID": "SPDXRef-Bottle-ffmpeg",
+      "name": "ffmpeg",
+      "versionInfo": "9.0.1_1",
+      "filesAnalyzed": false,
+      "licenseDeclared": "NOASSERTION",
+      "builtDate": "2026-09-10T14:20:22Z",
+      "licenseConcluded": "GPL-3.0-or-later",
+      "downloadLocation": "https://ghcr.io/v2/homebrew/core/ffmpeg/blobs/sha256:3f4eadb49e3bfedef14ae41590130164eba754b99b39fb135fa51958cb2d80f1",
+      "copyrightText": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceLocator": "pkg:brew/ffmpeg@9.0.1_1",
+          "referenceType": "purl"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "3f4eadb49e3bfedef14ae41590130164eba754b99b39fb135fa51958cb2d80f1"
+        }
+      ]
+    }
+  ],
+  "relationships": [
+    {
+      "spdxElementId": "SPDXRef-File-ffmpeg",
+      "relationshipType": "PACKAGE_OF",
+      "relatedSpdxElement": "SPDXRef-Archive-ffmpeg-src"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-SPDXRef-dav1d-1.5.4",
+      "relationshipType": "RUNTIME_DEPENDENCY_OF",
+      "relatedSpdxElement": "SPDXRef-Bottle-ffmpeg"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-SPDXRef-mpg123-1.33.7",
+      "relationshipType": "RUNTIME_DEPENDENCY_OF",
+      "relatedSpdxElement": "SPDXRef-Bottle-ffmpeg"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-SPDXRef-lame-4.0",
+      "relationshipType": "RUNTIME_DEPENDENCY_OF",
+      "relatedSpdxElement": "SPDXRef-Bottle-ffmpeg"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-SPDXRef-libvmaf-3.2.0",
+      "relationshipType": "RUNTIME_DEPENDENCY_OF",
+      "relatedSpdxElement": "SPDXRef-Bottle-ffmpeg"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-SPDXRef-libvpx-1.17.0",
+      "relationshipType": "RUNTIME_DEPENDENCY_OF",
+      "relatedSpdxElement": "SPDXRef-Bottle-ffmpeg"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-SPDXRef-ca-certificates-2026-08-13",
+      "relationshipType": "RUNTIME_DEPENDENCY_OF",
+      "relatedSpdxElement": "SPDXRef-Bottle-ffmpeg"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-SPDXRef-openssl@3-3.6.4",
+      "relationshipType": "RUNTIME_DEPENDENCY_OF",
+      "relatedSpdxElement": "SPDXRef-Bottle-ffmpeg"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-SPDXRef-opus-1.6.1",
+      "relationshipType": "RUNTIME_DEPENDENCY_OF",
+      "relatedSpdxElement": "SPDXRef-Bottle-ffmpeg"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-SPDXRef-sdl3-3.4.16",
+      "relationshipType": "RUNTIME_DEPENDENCY_OF",
+      "relatedSpdxElement": "SPDXRef-Bottle-ffmpeg"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-SPDXRef-sdl2-compat-2.32.72",
+      "relationshipType": "RUNTIME_DEPENDENCY_OF",
+      "relatedSpdxElement": "SPDXRef-Bottle-ffmpeg"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-SPDXRef-svt-av1-4.2.0",
+      "relationshipType": "RUNTIME_DEPENDENCY_OF",
+      "relatedSpdxElement": "SPDXRef-Bottle-ffmpeg"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-SPDXRef-x264-r3222",
+      "relationshipType": "RUNTIME_DEPENDENCY_OF",
+      "relatedSpdxElement": "SPDXRef-Bottle-ffmpeg"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-SPDXRef-x265-4.3",
+      "relationshipType": "RUNTIME_DEPENDENCY_OF",
+      "relatedSpdxElement": "SPDXRef-Bottle-ffmpeg"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-SPDXRef-xz-5.8.3",
+      "relationshipType": "RUNTIME_DEPENDENCY_OF",
+      "relatedSpdxElement": "SPDXRef-Bottle-ffmpeg"
+    },
+    {
+      "spdxElementId": "SPDXRef-Compiler",
+      "relationshipType": "BUILD_TOOL_OF",
+      "relatedSpdxElement": "SPDXRef-Archive-ffmpeg-src"
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "Mathilde-BlackItalic.ttf": {"status":"EXCLUDED_BY_USER", "date":"2026-10-08", "note":"User asked to skip this font. No distribution or replacement. Full build requires separately authorized matching resource."},
+  "Poppins-Bold.ttf": {"license":"SIL-OFL-1.1", "notice":"licenses/Poppins-OFL.txt", "source":"https://github.com/google/fonts/tree/main/ofl/poppins"},
+  "Whisper": {"license":"MIT", "notice":"licenses/Whisper-MIT.txt", "model":"ggml-base.bin", "source":"https://github.com/openai/whisper"},
+  "whisper.cpp": {"license":"MIT", "notice":"licenses/whisper.cpp-MIT.txt", "source":"https://github.com/ggml-org/whisper.cpp"},
+  "ProPainter": {"status":"EXCLUDED_COMPANY_PRODUCTION", "license":"S-Lab-1.0-NONCOMMERCIAL", "source":"https://github.com/sczhou/ProPainter/blob/main/LICENSE", "weights_distributed":false},
+  "FFmpeg_and_libraries": {"notice_directory":"licenses/media", "source_versions_and_hashes":"manifests/runtime-lock.json", "license":"component-specific, including GPL-3.0-or-later; source recipes and notices retained", "execution":"separate subprocess; recipients can replace/rebuild binaries"},
+  "Python_and_packages": {"versions":"manifests/dependencies-main.json", "notice":"licenses/Python-LICENSE.txt and distribution package .dist-info licenses in runtime archive"},
+  "CTA": {"status":"existing user-selected application resource; unchanged", "manifest":"resources/cta/current.json"}
+}

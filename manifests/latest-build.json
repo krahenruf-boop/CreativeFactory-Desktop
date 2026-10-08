@@ -1,0 +1,22 @@
+{
+  "product_name": "Creative Factory",
+  "compatibility": {
+    "previous_product_name": "AutoCut",
+    "bundle_id": "com.autocut.desktop",
+    "data_directory": "~/Library/Application Support/AutoCut",
+    "keychain_service": "com.autocut.providers"
+  },
+  "version": "0.1.17",
+  "build_id": "20261008.180824",
+  "engine_version": "ffc76e84894dd23fbe2e6ea5e15692b28373ffb5",
+  "engine_fingerprint": "7be3e66821f712ebb5246605ce662e0dbced195374797f468a34d8d5a4aa360b",
+  "schema_version": 3,
+  "minimum_schema": 1,
+  "architecture": "arm64",
+  "minimum_macos": "27.0",
+  "signing": "AD_HOC_SIGNED",
+  "notarized": false,
+  "distribution_profile": "company",
+  "propainter_enabled": false,
+  "status": "COMPANY_ACCEPTANCE_PENDING"
+}

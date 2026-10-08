@@ -1,0 +1,104 @@
+{
+  "SPDXID": "SPDXRef-DOCUMENT",
+  "spdxVersion": "SPDX-2.3",
+  "name": "SBOM-SPDX-opus-1.6.1",
+  "creationInfo": {
+    "created": "2026-09-17T03:53:18Z",
+    "creators": [
+      "Tool: https://github.com/Homebrew/brew@7.0.2"
+    ]
+  },
+  "dataLicense": "CC0-1.0",
+  "documentNamespace": "https://formulae.brew.sh/spdx/opus-1.6.1.json",
+  "documentDescribes": [
+    "SPDXRef-Archive-opus-src",
+    "SPDXRef-Compiler",
+    "SPDXRef-Bottle-opus"
+  ],
+  "files": [
+    {
+      "SPDXID": "SPDXRef-File-opus",
+      "fileName": "opus-1.6.1.tar.gz",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "6ffcb593207be92584df15b32466ed64bbec99109f007c82205f0194572411a1"
+        }
+      ]
+    }
+  ],
+  "packages": [
+    {
+      "SPDXID": "SPDXRef-Archive-opus-src",
+      "name": "opus",
+      "versionInfo": "1.6.1",
+      "filesAnalyzed": false,
+      "licenseDeclared": "NOASSERTION",
+      "builtDate": "2026-01-15T00:30:48Z",
+      "licenseConcluded": "BSD-3-Clause",
+      "downloadLocation": "https://ftp.osuosl.org/pub/xiph/releases/opus/opus-1.6.1.tar.gz",
+      "copyrightText": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceLocator": "pkg:brew/homebrew/core/opus@1.6.1",
+          "referenceType": "purl"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "6ffcb593207be92584df15b32466ed64bbec99109f007c82205f0194572411a1"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-Compiler",
+      "name": "clang",
+      "versionInfo": "27.0",
+      "filesAnalyzed": false,
+      "licenseDeclared": "NOASSERTION",
+      "licenseConcluded": "NOASSERTION",
+      "copyrightText": "NOASSERTION",
+      "downloadLocation": "NOASSERTION",
+      "checksums": [],
+      "externalRefs": []
+    },
+    {
+      "SPDXID": "SPDXRef-Bottle-opus",
+      "name": "opus",
+      "versionInfo": "1.6.1",
+      "filesAnalyzed": false,
+      "licenseDeclared": "NOASSERTION",
+      "builtDate": "2026-09-10T06:36:19Z",
+      "licenseConcluded": "BSD-3-Clause",
+      "downloadLocation": "https://ghcr.io/v2/homebrew/core/opus/blobs/sha256:ce5518990c125d46b25500baf13150ea733a0638d50fdd57afb1500def871b06",
+      "copyrightText": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceLocator": "pkg:brew/opus@1.6.1",
+          "referenceType": "purl"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "ce5518990c125d46b25500baf13150ea733a0638d50fdd57afb1500def871b06"
+        }
+      ]
+    }
+  ],
+  "relationships": [
+    {
+      "spdxElementId": "SPDXRef-File-opus",
+      "relationshipType": "PACKAGE_OF",
+      "relatedSpdxElement": "SPDXRef-Archive-opus-src"
+    },
+    {
+      "spdxElementId": "SPDXRef-Compiler",
+      "relationshipType": "BUILD_TOOL_OF",
+      "relatedSpdxElement": "SPDXRef-Archive-opus-src"
+    }
+  ]
+}

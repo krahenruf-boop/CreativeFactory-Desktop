@@ -1,0 +1,104 @@
+{
+  "SPDXID": "SPDXRef-DOCUMENT",
+  "spdxVersion": "SPDX-2.3",
+  "name": "SBOM-SPDX-mpg123-1.33.7",
+  "creationInfo": {
+    "created": "2026-09-17T03:53:18Z",
+    "creators": [
+      "Tool: https://github.com/Homebrew/brew@7.0.2"
+    ]
+  },
+  "dataLicense": "CC0-1.0",
+  "documentNamespace": "https://formulae.brew.sh/spdx/mpg123-1.33.7.json",
+  "documentDescribes": [
+    "SPDXRef-Archive-mpg123-src",
+    "SPDXRef-Compiler",
+    "SPDXRef-Bottle-mpg123"
+  ],
+  "files": [
+    {
+      "SPDXID": "SPDXRef-File-mpg123",
+      "fileName": "mpg123-1.33.7.tar.bz2",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "31d0e35a4ca567ec9b5ebda6c3062bb4435d6d3eacd6ef0d95cadd7854dc03ee"
+        }
+      ]
+    }
+  ],
+  "packages": [
+    {
+      "SPDXID": "SPDXRef-Archive-mpg123-src",
+      "name": "mpg123",
+      "versionInfo": "1.33.7",
+      "filesAnalyzed": false,
+      "licenseDeclared": "NOASSERTION",
+      "builtDate": "2026-08-02T21:29:26Z",
+      "licenseConcluded": "LGPL-2.1-only",
+      "downloadLocation": "https://www.mpg123.de/download/mpg123-1.33.7.tar.bz2",
+      "copyrightText": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceLocator": "pkg:brew/homebrew/core/mpg123@1.33.7",
+          "referenceType": "purl"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "31d0e35a4ca567ec9b5ebda6c3062bb4435d6d3eacd6ef0d95cadd7854dc03ee"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-Compiler",
+      "name": "clang",
+      "versionInfo": "27.0",
+      "filesAnalyzed": false,
+      "licenseDeclared": "NOASSERTION",
+      "licenseConcluded": "NOASSERTION",
+      "copyrightText": "NOASSERTION",
+      "downloadLocation": "NOASSERTION",
+      "checksums": [],
+      "externalRefs": []
+    },
+    {
+      "SPDXID": "SPDXRef-Bottle-mpg123",
+      "name": "mpg123",
+      "versionInfo": "1.33.7",
+      "filesAnalyzed": false,
+      "licenseDeclared": "NOASSERTION",
+      "builtDate": "2026-09-10T06:30:08Z",
+      "licenseConcluded": "LGPL-2.1-only",
+      "downloadLocation": "https://ghcr.io/v2/homebrew/core/mpg123/blobs/sha256:39373e6056e4816ff08de821851358ab0a6bbf35708f42544b184722da08315c",
+      "copyrightText": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceLocator": "pkg:brew/mpg123@1.33.7",
+          "referenceType": "purl"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "39373e6056e4816ff08de821851358ab0a6bbf35708f42544b184722da08315c"
+        }
+      ]
+    }
+  ],
+  "relationships": [
+    {
+      "spdxElementId": "SPDXRef-File-mpg123",
+      "relationshipType": "PACKAGE_OF",
+      "relatedSpdxElement": "SPDXRef-Archive-mpg123-src"
+    },
+    {
+      "spdxElementId": "SPDXRef-Compiler",
+      "relationshipType": "BUILD_TOOL_OF",
+      "relatedSpdxElement": "SPDXRef-Archive-mpg123-src"
+    }
+  ]
+}

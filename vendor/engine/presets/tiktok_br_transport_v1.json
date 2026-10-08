@@ -1,0 +1,127 @@
+{
+  "id": "TIKTOK_BR_TRANSPORT_VISUAL_V1",
+  "version": 1,
+  "status": "PENDING_USER_VISUAL_CONFIRMATION",
+  "canvas": {
+    "reference_width": 1080,
+    "reference_height": 1920
+  },
+  "title": {
+    "font_file": "assets/fonts/Mathilde-BlackItalic.ttf",
+    "font_name": "Mathilde Black Italic",
+    "pillow_name": [
+      "Mathilde",
+      "Black Italic"
+    ],
+    "font_sha256": "3dbb44f22e330eac8349d30e7bdd951a20df53c4049a2a46630f03d0171e1255",
+    "anchor_x": 0.5,
+    "anchor_y": 0.17,
+    "font_size": 76,
+    "font_min": 68,
+    "font_max": 84,
+    "max_width_ratio": 0.88,
+    "max_lines": 2,
+    "fill": "#FFFFFF",
+    "stroke": "#000000",
+    "stroke_width": 6,
+    "line_spacing_ratio": 0.94,
+    "duration": 5.0,
+    "align": "center",
+    "safe_y": [
+      0.12,
+      0.22
+    ],
+    "left_safe": 0.055,
+    "right_safe": 0.055
+  },
+  "subtitle": {
+    "font_file": "~/Library/Fonts/Poppins-Bold.ttf",
+    "font_name": "Poppins Bold",
+    "pillow_name": [
+      "Poppins",
+      "Bold"
+    ],
+    "anchor_x": 0.5,
+    "anchor_y": 0.78,
+    "font_size": 52,
+    "font_min": 48,
+    "font_max": 56,
+    "max_width_ratio": 0.76,
+    "max_lines": 2,
+    "fill": "#FFFFFF",
+    "stroke": "#000000",
+    "stroke_width": 5,
+    "line_spacing_ratio": 1.0,
+    "align": "center",
+    "remove_punctuation": true,
+    "uppercase": false,
+    "background": false
+  },
+  "cta": {
+    "anchor_x": 0.15,
+    "anchor_y": 0.65,
+    "right_anchor_x": 0.85,
+    "width_ratio": 0.16,
+    "width_range": [
+      0.15,
+      0.18
+    ],
+    "duration": 5.0,
+    "animation": "vertical_bounce",
+    "bounce_amplitude_ratio": 0.025,
+    "bounce_period_seconds": 0.8,
+    "horizontal_motion": false,
+    "asset_selection": "current_valid_user_asset",
+    "normalize_visible_bounds": true,
+    "default_asset_id": "903f66dc981e4e90827eee03b72cf01d",
+    "default_asset_sha256": "4264c37d59f5622e0bc646f2c7d1dced03355a7e18580db2df148809f7dcef74",
+    "width_basis": "red_arrow_body",
+    "asset_layout_override": {
+      "layer": "cta",
+      "override_reason": "CTA_SUBTITLE_COLLISION",
+      "chosen_position": [
+        0.166,
+        0.62
+      ],
+      "detail": "User requested reference-sized red arrow body (173px); keep full animated side flashes on canvas and clear of subtitles. Base anchor stays15%,65%; this asset uses16.6%,62%."
+    }
+  },
+  "override_limits": {
+    "title": {
+      "x": [
+        0.5,
+        0.5
+      ],
+      "y": [
+        0.12,
+        0.25
+      ]
+    },
+    "subtitle": {
+      "x": [
+        0.5,
+        0.5
+      ],
+      "y": [
+        0.68,
+        0.82
+      ]
+    },
+    "cta": {
+      "x_ranges": [
+        [
+          0.12,
+          0.22
+        ],
+        [
+          0.78,
+          0.88
+        ]
+      ],
+      "y": [
+        0.58,
+        0.72
+      ]
+    }
+  }
+}

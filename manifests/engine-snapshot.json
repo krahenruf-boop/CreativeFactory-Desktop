@@ -1,0 +1,145 @@
+{
+  "engine_commit": "ffc76e84894dd23fbe2e6ea5e15692b28373ffb5",
+  "engine_fingerprint": "7be3e66821f712ebb5246605ce662e0dbced195374797f468a34d8d5a4aa360b",
+  "files": [
+    {
+      "path": "scripts/headless_overlay_policy.py",
+      "source_sha256": "6b248cf64b838bc08ce8e8d3a02d7cfabab47c8c38cac56925fe6b37b054291d"
+    },
+    {
+      "path": "app/s3/experimental_propainter.py",
+      "source_sha256": "9431d6dbd699ef64066d64283e9d88debd0fe31d60c8a1ee6725ae1ffbf52fa5"
+    },
+    {
+      "path": "app/s3/overlay_policy.py",
+      "source_sha256": "6460b60c0ee615b266a654b5ca99d73a81cb70fd4b25d7a28fa2eebe8206b3aa"
+    },
+    {
+      "path": "scripts/headless_overlay.py",
+      "source_sha256": "831b3eea6f893bbaa60ab28da349fb8866c39969c54124b19c3a6d93083f5dfa"
+    },
+    {
+      "path": "app/s3/headless_runtime.py",
+      "source_sha256": "504dee1ed41ec76fdb6a67280cbd798415ac80d0d3c827b9d9a1b15b3cce5590"
+    },
+    {
+      "path": "scripts/headless_transport.py",
+      "source_sha256": "17722191c8e6938f2fedf5315d910e6f68bddca35be9f0637c7aa6c4f5b6d09d"
+    },
+    {
+      "path": "app/s2/types.py",
+      "source_sha256": "7cc8bf6e2b1cfbfb3e6f7870e6181a78f4eb5ca876f3882686269d8b845c0451"
+    },
+    {
+      "path": "app/s2/providers.py",
+      "source_sha256": "dd4f118d50c8590bee99836c0a928094bc10a5eb2be76f4928203603bafdc3b7"
+    },
+    {
+      "path": "app/media.py",
+      "source_sha256": "645e66b1e9c84162b90cca7448e181e46e7a6cdea19d917d6c79fd534bc57b10"
+    },
+    {
+      "path": "app/s2/engine.py",
+      "source_sha256": "2acf08eba6d4de089c5a261a07ebca99b86ed63dfa4c43372b47e7fa0629cd23"
+    },
+    {
+      "path": "app/s2/tts_text.py",
+      "source_sha256": "c007408b268161565a21ba526770ede6b974a8d247c18774a3fd9fd573035e7a"
+    },
+    {
+      "path": "app/cta_assets.py",
+      "source_sha256": "2c2099dcd20baa1e5793d1154b001668bf8412b740bfa3e41a0884259387714d"
+    },
+    {
+      "path": "app/cta.py",
+      "source_sha256": "d5302544bb17de37e123602128e56172e44bf2eaca24f862c71ef57c7a61b2b6"
+    },
+    {
+      "path": "app/mpt_text.py",
+      "source_sha256": "3f4d269473f2afed43c766cbab368e94cc511cbfe144b68083c0e9c51656e702"
+    },
+    {
+      "path": "app/models.py",
+      "source_sha256": "03403c736eea737f1de5ffcb7045aba175a69e7c0c83f97b15461404d5308c64"
+    },
+    {
+      "path": "app/s3/headless_jobs.py",
+      "source_sha256": "e4b7e0380e082f916c5745dbeba7562ba4674920f0fa2b193ec13322b2daac62"
+    },
+    {
+      "path": "app/s2/asr.py",
+      "source_sha256": "063034e93ed12cf64e497da9b91d9ac47fa1f71c25e91ca563cdd8e218413be6"
+    },
+    {
+      "path": "app/s3/headless_media.py",
+      "source_sha256": "40e9dccaef686c01a259b1816019c3bbfdcbb6b32e6ac46228efad2971432dc4"
+    },
+    {
+      "path": "app/s3/visual_preset.py",
+      "source_sha256": "6412b873b4ebab6ba64c0b3705859d7c04c082407b0f03ebb1dac6327701962b"
+    },
+    {
+      "path": "app/s3/subtitles.py",
+      "source_sha256": "5dfd0a1dce2777ac361c0fd166e7916ee1722c523bbb195497c354e4552935e1"
+    },
+    {
+      "path": "app/s3/fonts.py",
+      "source_sha256": "d1dfdde01a06f34fd354894b9e81d8c8cca2b572a79227d06b65f76d82f4580c"
+    },
+    {
+      "path": "app/s3/types.py",
+      "source_sha256": "6e70dda5b30bc9684fa649f5b6888f7ca12491dd48ad74d2a29717017d6d7320"
+    },
+    {
+      "path": "app/s3/deepseek_batch.py",
+      "source_sha256": "35bc8452b0bfb4641dfabda7c5ab5af67fecfd8e0ca0a0399f957fd106f0df66"
+    },
+    {
+      "path": "app/s3/deepseek_copy.py",
+      "source_sha256": "01c10aa3dfa8c7380fb4bedc38a226a26c75bb2d0d410bd9c1984eb9edf070bd"
+    },
+    {
+      "path": "app/s2/deepseek.py",
+      "source_sha256": "a32cb7f40293c3334f12eec22d71837ad1e0a4123bbbdbaaac9fb9acce98259e"
+    },
+    {
+      "path": "presets/headless_execution.json",
+      "source_sha256": "77f5015985bc06ca30fee419e6f8ba2708a88c2d8e211a75a514fe7fc5976d81"
+    },
+    {
+      "path": "presets/tiktok_br_transport_v1.json",
+      "source_sha256": "86b958432dacd9c95511e7a6dd4b3f8aa4a2492c7114473c18eda8f7643131dc"
+    },
+    {
+      "path": "prompts/DEEPSEEK_TIKTOK_BR_V1.txt",
+      "source_sha256": "9b375d1db585db5d3c08bcc1ea3f32938aa7fa2531ab78d24e78d0dd7b8cc52b"
+    },
+    {
+      "path": "prompts/DEEPSEEK_TIKTOK_BR_BATCH_V1.txt",
+      "source_sha256": "444c68fb032b4c7833e4914e5aa4b9c51ac20e073e894a6ab8a32e0e4a3ec4a5"
+    },
+    {
+      "path": "docs/HEADLESS_OVERLAY_STANDARD.md",
+      "source_sha256": "1ee522747f2c45b74a0bfc739c848174af525d6640640088c90bddf7ce4bf160"
+    },
+    {
+      "path": "docs/HEADLESS_DEEPSEEK.md",
+      "source_sha256": "eaf7ff2f01f23f6b7a30237ef92dc7c42a27478cf8d1c3304f737534c728016a"
+    },
+    {
+      "path": "docs/HEADLESS_VISUAL_PRESET.md",
+      "source_sha256": "22696347ef2426699f13e54e763a4638a0fefed26dde11a786ef1cab92ff62c5"
+    },
+    {
+      "path": "docs/HEADLESS_PERFORMANCE.md",
+      "source_sha256": "c6b3e6bde2f0e5fdf5f904a69ab6466b0f433472aabba1f2943a6b81d0f7f673"
+    }
+  ],
+  "snapshot_type": "exact_headless_dependency_closure",
+  "upstream": "CreativeFactory",
+  "schema_version": 3,
+  "upstream_bundle_fingerprint": "ada04cdbbcf9cca23e3ea08c1d7e6fb2c2db39951f5aac10a451823ce2c510bc",
+  "excluded_nonruntime_files": [
+    "docs/HEADLESS_PERFORMANCE_BENCHMARK.json"
+  ]
+}

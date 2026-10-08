@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "asr_workers": 2,
+  "deepseek_items_per_request": 5,
+  "titles_per_item": 3,
+  "tts_workers": 3,
+  "tts_workers_after_429": 2,
+  "mps_workers": 1,
+  "cpu_light_workers": 2,
+  "propainter_preview_max": 2,
+  "second_preview_requires": "MASK_EDGE",
+  "final_render_workers": 2,
+  "encoder": "h264_videotoolbox",
+  "software_encoder": "libx264",
+  "hardware_bit_rate": "12M",
+  "hardware_software_fallback": false,
+  "benchmark_evidence": "docs/HEADLESS_PERFORMANCE_BENCHMARK.json",
+  "preflight_canvas": [540, 960],
+  "max_full_renders": 2,
+  "normal_full_renders": 1
+}

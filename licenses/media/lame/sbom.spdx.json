@@ -1,0 +1,133 @@
+{
+  "SPDXID": "SPDXRef-DOCUMENT",
+  "spdxVersion": "SPDX-2.3",
+  "name": "SBOM-SPDX-lame-4.0",
+  "creationInfo": {
+    "created": "2026-09-17T03:53:18Z",
+    "creators": [
+      "Tool: https://github.com/Homebrew/brew@7.0.2"
+    ]
+  },
+  "dataLicense": "CC0-1.0",
+  "documentNamespace": "https://formulae.brew.sh/spdx/lame-4.0.json",
+  "documentDescribes": [
+    "SPDXRef-Archive-lame-src",
+    "SPDXRef-Package-SPDXRef-mpg123-1.33.7",
+    "SPDXRef-Compiler",
+    "SPDXRef-Bottle-lame"
+  ],
+  "files": [
+    {
+      "SPDXID": "SPDXRef-File-lame",
+      "fileName": "lame-4.0.tar.gz",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "3df5124d5ad3a98312ffd7ba6a9b36230e4f8a3e66d3ce0f425e336c32d216eb"
+        }
+      ]
+    }
+  ],
+  "packages": [
+    {
+      "SPDXID": "SPDXRef-Archive-lame-src",
+      "name": "lame",
+      "versionInfo": "4.0",
+      "filesAnalyzed": false,
+      "licenseDeclared": "NOASSERTION",
+      "builtDate": "2026-07-11T07:43:46Z",
+      "licenseConcluded": "LGPL-2.0-or-later",
+      "downloadLocation": "https://downloads.sourceforge.net/project/lame/lame/4.0/lame-4.0.tar.gz",
+      "copyrightText": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceLocator": "pkg:brew/homebrew/core/lame@4.0",
+          "referenceType": "purl"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "3df5124d5ad3a98312ffd7ba6a9b36230e4f8a3e66d3ce0f425e336c32d216eb"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-Package-SPDXRef-mpg123-1.33.7",
+      "name": "mpg123",
+      "versionInfo": "1.33.7",
+      "filesAnalyzed": false,
+      "licenseDeclared": "NOASSERTION",
+      "licenseConcluded": "LGPL-2.1-only",
+      "downloadLocation": "https://ghcr.io/v2/homebrew/core/mpg123/blobs/sha256:39373e6056e4816ff08de821851358ab0a6bbf35708f42544b184722da08315c",
+      "copyrightText": "NOASSERTION",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "39373e6056e4816ff08de821851358ab0a6bbf35708f42544b184722da08315c"
+        }
+      ],
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceLocator": "pkg:brew/mpg123@1.33.7",
+          "referenceType": "purl"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-Compiler",
+      "name": "clang",
+      "versionInfo": "27.0",
+      "filesAnalyzed": false,
+      "licenseDeclared": "NOASSERTION",
+      "licenseConcluded": "NOASSERTION",
+      "copyrightText": "NOASSERTION",
+      "downloadLocation": "NOASSERTION",
+      "checksums": [],
+      "externalRefs": []
+    },
+    {
+      "SPDXID": "SPDXRef-Bottle-lame",
+      "name": "lame",
+      "versionInfo": "4.0",
+      "filesAnalyzed": false,
+      "licenseDeclared": "NOASSERTION",
+      "builtDate": "2026-09-10T08:02:49Z",
+      "licenseConcluded": "LGPL-2.0-or-later",
+      "downloadLocation": "https://ghcr.io/v2/homebrew/core/lame/blobs/sha256:c7803cbfacfe405583edef9d81056088008b8cb1e8efca6c2ab1983e1af35de6",
+      "copyrightText": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceLocator": "pkg:brew/lame@4.0",
+          "referenceType": "purl"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "c7803cbfacfe405583edef9d81056088008b8cb1e8efca6c2ab1983e1af35de6"
+        }
+      ]
+    }
+  ],
+  "relationships": [
+    {
+      "spdxElementId": "SPDXRef-File-lame",
+      "relationshipType": "PACKAGE_OF",
+      "relatedSpdxElement": "SPDXRef-Archive-lame-src"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-SPDXRef-mpg123-1.33.7",
+      "relationshipType": "RUNTIME_DEPENDENCY_OF",
+      "relatedSpdxElement": "SPDXRef-Bottle-lame"
+    },
+    {
+      "spdxElementId": "SPDXRef-Compiler",
+      "relationshipType": "BUILD_TOOL_OF",
+      "relatedSpdxElement": "SPDXRef-Archive-lame-src"
+    }
+  ]
+}
