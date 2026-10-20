@@ -9,20 +9,27 @@ JOB_ID=re.compile(r'^[a-f0-9]{32}$')
 class JobDeletion:
  def __init__(self,store,manager):
   self.store,self.manager=store,manager;self.edits={}
+  if hasattr(manager,'control'):manager.control.deletion=self
   self.recover()
  def running(self,j):
   future=getattr(self.manager,'active',{}).get(j['id'])
-  return j['state'] not in INACTIVE or bool(future and not future.done()) or bool(self.edits.get(j['id']))
+  control=getattr(self.manager,'control',None)
+  busy=control.busy(j['id']) if control else bool(future and not future.done()) or any(job==j['id'] for job,_ in getattr(self.manager,'item_pending',set()))
+  return busy or bool(self.edits.get(j['id']))
  def can_delete(self,j):return not j.get('deleted_at') and not self.running(j)
  @contextmanager
  def edit(self,id):
   # A lease spans async operations too; a deletion cannot race approval/translation.
   with self.store.lock:
    if self.store.get(id).get('deleted_at'):raise ValueError('JOB_DELETED')
+   if self.store.get(id).get('control_request'):raise ValueError('JOB_CONTROL_PENDING')
    self.edits[id]=self.edits.get(id,0)+1
   try:yield
   finally:
-   with self.store.lock:self.edits[id]-=1
+   with self.store.lock:
+    self.edits[id]-=1
+    if hasattr(self.manager,'control'):
+     with self.manager.lock:self.manager.control.settle(id)
  def soft_delete(self,id):
   with self.store.lock,self.store.connect() as db:
    db.execute('BEGIN IMMEDIATE');j=self.store.get(id)

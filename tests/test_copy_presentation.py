@@ -43,6 +43,15 @@ class ComparisonTests(unittest.TestCase):
  def tearDown(self):self.tmp.cleanup()
  def job(self,**kw):
   return self.store.create(dict(request_id=digest(kw),input_path=str(self.root),product_name='腰带扣',product_profile_id='general',market='Brazil',mode='Transport',script_mode='AUTO',title_approval_mode='auto',watermark_mode='handled',**kw))[0]
+ def test_null_legacy_candidates_do_not_break_entire_job_list(self):
+  j=self.job();self.store.item(j['id'],1,status='WAITING_SCRIPT_APPROVAL',copy=response(),script_candidates=None,title_candidates=None)
+  r=self.c.get('/jobs');self.assertEqual(r.status_code,200,r.text)
+  self.assertEqual(r.json()[0]['items'][0]['script_candidates'],[]);self.assertEqual(r.json()[0]['items'][0]['title_candidates'],[])
+ def test_worker_diagnostics_exclude_local_values(self):
+  private_marker='never-export-test-frame-locals'
+  r=self.c.get('/runtime/worker-status');self.assertEqual(r.status_code,200,r.text);self.assertNotIn(private_marker,r.text)
+  for worker in r.json()['workers']:
+   for location in worker['locations']:self.assertEqual(set(location),{'file','line','function'})
  def test_br_mx_single_batch_response_and_cache_all_models(self):
   for model in ['deepseek-flash','deepseek-v4-pro']:
    a=MockAdapter();out=generate_batch([context('pt-BR'),context('es-MX')],self.root/model,lambda:a,model=model)

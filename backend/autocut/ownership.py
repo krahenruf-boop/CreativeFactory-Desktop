@@ -44,6 +44,16 @@ def probe_output(stat):
 def file_hash(stat):
  with open(stat[0],'rb') as f:return hashlib.file_digest(f,'sha256').hexdigest()
 
+def completed_record(x,cp):
+ """Completion is historical; reading it must not re-check exported files."""
+ if x.get('status') not in {'PASS','USER_APPROVED'}:return False
+ if not all(k in cp for k in ('FINAL_RENDERED','QA_DONE')):return False
+ qa=cp['QA_DONE']['data']
+ if qa.get('status') not in {'PASS','WARNING'}:
+  from .production_policy import classify
+  if not ('FINAL_APPROVED' in cp and qa.get('technical',{}).get('status')=='PASS' and classify(qa.get('visual') or qa)['status']=='WARNING'):return False
+ return cp['FINAL_RENDERED']['input_sha']==cp['QA_DONE']['input_sha'] and not cp['FINAL_RENDERED']['data'].get('error')
+
 def final_ready(store,j,x,cp=None,verify=True):
  """All final transitions (including automatic PASS) use this production gate."""
  cp=cp if cp is not None else checkpoints(store,j['id'],x['rank'])
@@ -59,10 +69,15 @@ def final_ready(store,j,x,cp=None,verify=True):
  plan=read(x.get('plan'))
  if not plan or str(plan.get('output'))!=str(x.get('output')):return False
  if plan.get('cta_policy',{}).get('version')=='CTA_REQUIRED_V1':
-  from .cta_policy import required
+  from .cta_policy import required,check_plan,POSITION_POLICY,MATCHER_VERSION
   if required(plan):
+   try:check_plan(plan)
+   except (ValueError,KeyError,TypeError):return False
    arrow=qa.get('cta') or {}
    if arrow.get('status')!='PASS' or arrow.get('output_sha256')!=file_hash(tuple(stat)):return False
+   if plan['cta_policy'].get('position_policy')==POSITION_POLICY:
+    if (arrow.get('position_policy')!=POSITION_POLICY or arrow.get('matcher')!=MATCHER_VERSION
+        or arrow.get('right_matched_frames')!=0 or arrow.get('anchor',1)>.5):return False
  # Checkpoints must describe the same render revision, never an earlier export.
  if cp['FINAL_RENDERED']['input_sha']!=cp['QA_DONE']['input_sha']:return False
  rendered=cp['FINAL_RENDERED']['data']
@@ -99,8 +114,9 @@ def item_state(store,j,x,cp=None):
  # A stable per-item approval node takes precedence over other items running.
  waiting_script=s=='WAITING_SCRIPT_APPROVAL' or (s in {'COPY_READY','WAITING'} and candidate and x.get('script_status')!='USER_APPROVED' and j['state']=='WAITING_SCRIPT_APPROVAL')
  waiting_title=s=='WAITING_TITLE_APPROVAL' or (s in {'COPY_READY','WAITING'} and j['state']=='WAITING_TITLE_APPROVAL')
- ready=False
- if waiting_script:action='APPROVE_SCRIPT' if candidate else 'CHANGE_SCRIPT'
+ ready=completed_record(x,cp)
+ if ready:pass
+ elif waiting_script:action='APPROVE_SCRIPT' if candidate else 'CHANGE_SCRIPT'
  elif waiting_title:action='APPROVE_TITLE'
  elif active:pass
  elif s in ACTIVE:action='RESUME_PROCESSING' if j['state']=='INTERRUPTED' else 'RETRY_PROCESSING'
@@ -165,7 +181,7 @@ def item_state(store,j,x,cp=None):
    elif 'TITLE_LANGUAGE_MISMATCH' in codes:
     owner='USER';action='REPAIR_TITLE';allowed=['EDIT_CONTENT_TITLES'];message='目标语言标题处理失败'
  if s=='FAILED' and action=='RETRY_PROCESSING':allowed=[];action='NONE';owner='SYSTEM';heading='失败';phase='FAILED'
- if phase=='COMPLETED':allowed=['EDIT_CONTENT']
+ if phase=='COMPLETED':allowed=[]
  if j.get('deleted_at'):owner='SYSTEM';allowed=[];heading='已删除';next_step='恢复任务后可操作'
  token=digest([x.get('action_revision',0),s,action,allowed,x.get('script_draft',{}).get('id'),x.get('script_revision'),x.get('selected_title_id'),x.get('script_status'),x.get('output'),[(k,v['input_sha']) for k,v in sorted(cp.items())]])
  return dict(current_owner=owner,pipeline_status=phase,user_action_status=action,allowed_actions=allowed,action_token=token,state_title=heading,state_message=message,confirmation_object=obj,next_step=next_step,current_stage=stage,final_rendered='FINAL_RENDERED' in cp,qa_done='QA_DONE' in cp,stages=stage_rows(cp,phase,action,ready and s in {'PASS','USER_APPROVED'}),ownership_version=VERSION)

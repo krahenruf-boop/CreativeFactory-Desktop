@@ -16,12 +16,15 @@ def bound_media(j,x):
  ids.update(c['supplement_source'] for c in (x.get('supplement_plan') or {}).get('clips',[]))
  return [m for m in j.get('supplement_media',[]) if m['id'] in ids]
 
-def validate(j,x,rows):
+def validate(j,x,rows,home=None):
  result=[];seen=set()
  for row in rows:
   m=inspect_media(row['path'])
   if m['sha256']!=row['sha256']:raise ValueError('SOURCE_HASH_CHANGED')
   if m['sha256'] in seen:continue
+  if home is not None and j.get('production_preflight_policy')=='PRODUCTION_PREFLIGHT_V1':
+   from .source_library import inspect_source
+   m['source_health']=inspect_source(home,m)
   seen.add(m['sha256'])
   result.append(dict(row,**m,job_id=j['id'],item_id=x['rank'],validation_status='PASS',supplement_plan_status='PENDING',created_at=row.get('created_at') or time.time()))
  if not result:raise ValueError('SUPPLEMENT_MEDIA_INVALID')
@@ -30,8 +33,11 @@ def validate(j,x,rows):
 def context(j,x,source,analysis,media):
  total=sum(c['source_end']-c['source_start'] for c in base_clips(source,x.get('decision') or {},effective(j,x['rank'])))
  voice=float((x.get('audio_result') or {}).get('duration') or 0)
+ estimated=False
+ if voice<=0 and j.get('production_preflight_policy')=='PRODUCTION_PREFLIGHT_V1' and (x.get('production_preflight') or {}).get('status')=='WAITING_MEDIA':
+  voice=float(x['production_preflight'].get('duration_upper') or 0);estimated=True
  if voice<=0:raise ValueError('SCRIPT_CONFIRMATION_REQUIRED')
- return dict(contract=CONTRACT,job_id=j['id'],item_id=x['rank'],source_sha256=source['sha256'],product=j.get('product_profile'),source_analysis=analysis,script=x['copy']['localized_script']['text'],available_visual_duration=total,tts_duration=voice,
+ return dict(contract=CONTRACT,job_id=j['id'],item_id=x['rank'],source_sha256=source['sha256'],product=j.get('product_profile'),source_analysis=analysis,script=x['copy']['localized_script']['text'],available_visual_duration=total,tts_duration=voice,duration_is_estimate=estimated,
   minimum_additional_seconds=max(0,math.ceil((voice/1.5-total)*30)/30),preferred_additional_seconds=max(0,math.ceil((voice/1.25-total)*30)/30),
   media=[{k:m[k] for k in ('id','duration','fps','width','height','sha256')} for m in media])
 
@@ -57,7 +63,7 @@ def apply_plan(service,id,rank,plan,media,ctx):
   latest.update(supplement_plan=plan,supplement_manifest=manifest,supplement_manifest_path=str(manifest_path),supplement_downloads=manifest['media'],supplement_recovery_key=key,duration_match=fit,
    plan=None,previous_output=latest.get('output') or latest.get('previous_output'),output=None,qa_status=None,auto_repair_used=False,
    status='QUEUED' if ready else 'WAITING_SUPPLEMENT_MEDIA',issues=[] if ready else ['VISUAL_DURATION_INSUFFICIENT'],
-   review_reason=None,waiting_reason=None,review_required=False,operation_inflight=False,resume_phase='SUPPLEMENT',resume_pending=ready,resume_running=False,current_owner='SYSTEM' if ready else 'USER',user_action_status='NONE' if ready else 'ADD_SUPPLEMENT_MEDIA',action_revision=latest.get('action_revision',0)+1)
+   review_reason=None,waiting_reason=None,review_required=False,operation_inflight=False,resume_phase='SCRIPT' if ctx.get('duration_is_estimate') else 'SUPPLEMENT',resume_pending=ready,resume_running=False,current_owner='SYSTEM' if ready else 'USER',user_action_status='NONE' if ready else 'ADD_SUPPLEMENT_MEDIA',action_revision=latest.get('action_revision',0)+1)
   db.execute('UPDATE job_items SET data=? WHERE job_id=? AND rank=?',(json.dumps(latest,ensure_ascii=False),id,rank))
   marks=','.join('?' for _ in INVALIDATED)
   db.execute(f'DELETE FROM checkpoints WHERE job_id=? AND item IN (?,?) AND stage IN ({marks})',(id,rank,str(int(rank)),*INVALIDATED))

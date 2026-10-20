@@ -1,9 +1,33 @@
-import csv,io
+import csv,hashlib,io,os,tempfile
 from pathlib import Path
+
+MAX_TABLE_BYTES=15*1024*1024
+TABLE_SUFFIXES={'.csv','.xlsx','.xls'}
+
+def upload_name(filename):
+ name=Path(filename.replace('\\','/')).name
+ if Path(name).suffix.lower() not in TABLE_SUFFIXES:raise ValueError('SCRIPT_TABLE_FORMAT')
+ if len(name.encode('utf-8'))>240 or any(ord(c)<32 for c in name):raise ValueError('SCRIPT_TABLE_FILENAME')
+ return name
+
+def import_upload(home,filename,data):
+ """Validate a browser upload before admitting its private, durable copy."""
+ name=upload_name(filename)
+ if not data:raise ValueError('SCRIPT_TABLE_EMPTY')
+ if len(data)>MAX_TABLE_BYTES:raise ValueError('SCRIPT_TABLE_TOO_LARGE')
+ root=Path(home)/'imports'/'references';root.mkdir(parents=True,exist_ok=True,mode=0o700)
+ with tempfile.TemporaryDirectory(prefix='.upload-',dir=root) as temp:
+  staged=Path(temp)/name;staged.write_bytes(data);staged.chmod(0o600)
+  result=parse(staged)
+  folder=root/hashlib.sha256(data).hexdigest();folder.mkdir(exist_ok=True,mode=0o700)
+  path=folder/name
+  if not path.exists():os.replace(staged,path)
+  elif path.is_symlink() or hashlib.sha256(path.read_bytes()).digest()!=hashlib.sha256(data).digest():raise ValueError('SCRIPT_TABLE_CACHE_INVALID')
+ return str(path.resolve()),result
 
 def parse(path):
  p=Path(path)
- if p.stat().st_size>15*1024*1024:raise ValueError('SCRIPT_TABLE_INVALID')
+ if p.stat().st_size>MAX_TABLE_BYTES:raise ValueError('SCRIPT_TABLE_TOO_LARGE')
  try:
   if p.suffix.lower()=='.csv':
    raw=p.read_bytes();text=None

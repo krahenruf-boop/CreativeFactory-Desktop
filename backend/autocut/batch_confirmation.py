@@ -62,15 +62,22 @@ def batch_view(store,j,states=None):
   titles=c['titles'];titles_ok=len(titles)==3 and len({str(t.get('id')) for t in titles})==3 and all(valid_title(t,j) for t in titles)
   selected=x.get('batch_selected_title_id',c['default_title_id'])
   options=titles+([c['custom_title']] if c['custom_title'] else [])
-  title_ok=titles_ok and any(str(t.get('id'))==str(selected) and valid_title(t,j) for t in options) and not x.get('operation_inflight')
-  rows.append(dict(rank=x['rank'],script=c['script'],script_zh=(c['script'] or {}).get('text_zh'),voiceover_mode=c['voiceover_mode'],script_ready=ready,script_error=reason,title_candidates=titles,custom_title=c['custom_title'],selected_title=selected,title_ready=title_ok,in_scope=x['rank'] in ranks,action_token=state['action_token'],thumbnail=bool(x.get('thumbnail') or x.get('source_sheet')),duration=x.get('duration') or x.get('source_duration'),status=x['status']))
+  title_ok=titles_ok and any(valid_title(t,j) and t.get('preflight',{}).get('status')!='BLOCKED' for t in options) and not x.get('operation_inflight')
+  from .production_preflight import review_duration
+  preflight=review_duration(store.home,j,x,c) if x['rank'] in ranks else dict(status='NOT_APPLICABLE')
+  rows.append(dict(rank=x['rank'],script=c['script'],script_zh=(c['script'] or {}).get('text_zh'),voiceover_mode=c['voiceover_mode'],script_ready=ready,script_error=reason,title_candidates=titles,custom_title=c['custom_title'],selected_title=selected,title_ready=title_ok,production_preflight=preflight,source_health=(x.get('source_snapshot') or {}).get('source_health'),in_scope=x['rank'] in ranks,action_token=state['action_token'],thumbnail=bool(x.get('thumbnail') or x.get('source_sheet')),duration=x.get('duration') or x.get('source_duration'),status=x['status'],pipeline_status=state['pipeline_status']))
  scoped=[x for x in rows if x['in_scope']];expected=int((j.get('output_count') if j.get('mode')=='Remix' else j.get('source_count')) or len(rows)) if j.get('batch_review_required') and not j.get('batch_review') else len(scoped)
  complete=bool(scoped) and len(scoped)==expected
  all_scripts=complete and all(x['script_ready'] for x in scoped)
  all_titles=complete and all(x['title_ready'] for x in scoped)
  token=digest([phase,ranks,expected,[(x['rank'],x['action_token'],x['script'],x['title_candidates'],x['custom_title']) for x in scoped]])
  pending=phase in {'SCRIPTS','TITLES'};busy=j['state'] in {'RUNNING','QUEUED'} or any(x.get('operation_inflight') for x in j['items'] if x['rank'] in ranks)
- label=('待确认口播' if all_scripts else '分析中' if busy else '失败') if phase=='SCRIPTS' else ('待确认标题' if all_titles else '正在准备标题' if busy else '失败') if phase=='TITLES' else '已完成' if rows and all(x['status'] in {'PASS','USER_APPROVED'} for x in rows) else '剪辑中' if j['state'] in {'RUNNING','QUEUED'} or any(x['status']=='QUEUED' for x in rows) else ('需要处理 '+str(sum(x['status'] not in {'PASS','USER_APPROVED'} for x in rows))) if any(x['status'] in {'PASS','USER_APPROVED'} for x in rows) else '失败'
+ completed=sum(x['pipeline_status']=='COMPLETED' for x in rows)
+ # Missing review content stays at the human barrier, with its row-level reason
+ # and repair action. Only the production phase uses the failure fallback.
+ if phase=='SCRIPTS':label='待确认口播' if all_scripts else '分析中' if busy else '口播待补齐'
+ elif phase=='TITLES':label='待确认标题' if all_titles else '正在准备标题' if busy else '标题待补齐'
+ else:label='已完成' if rows and completed==len(rows) else '剪辑中' if j['state'] in {'RUNNING','QUEUED'} or any(x['status']=='QUEUED' for x in rows) else ('需要处理 '+str(len(rows)-completed)) if completed else '失败'
  actions=[] if j.get('deleted_at') else ['APPROVE_SCRIPTS'] if phase=='SCRIPTS' and all_scripts else ['APPROVE_TITLES'] if phase=='TITLES' and all_titles else []
  return dict(phase=phase,ranks=ranks,items=rows,total=len(rows),expected=expected,script_ready_count=sum(x['script_ready'] for x in scoped),title_ready_count=sum(x['title_ready'] for x in scoped),all_scripts_ready=all_scripts,all_titles_ready=all_titles,allowed_actions=actions,action_token=token,label='已删除' if j.get('deleted_at') else label,legacy_partial=pending and len(ranks)!=len(rows))
 
@@ -79,6 +86,13 @@ def initial_batch(j):return batch_scope(j)[0] in {'SCRIPTS','TITLES'}
 class BatchConfirmation:
  def __init__(self,store,manager,content):self.store=store;self.manager=manager;self.content=content
  def view(self,id):return batch_view(self.store,self.store.get(id))
+ def observe(self,j,updates,state):
+  from .runtime_insights import transition
+  policy=j.get('production_preflight_policy')
+  for rank,row in updates.items():
+   old=next(x for x in j['items'] if x['rank']==rank)
+   transition(self.store.home,j['id'],rank,old['status'],row['status'],policy)
+  transition(self.store.home,j['id'],'job',j['state'],state,policy)
  def validate(self,id,phase,data):
   j=self.store.get(id);b=self.view(id);request=data.get('request_id')
   if j.get('deleted_at'):raise ValueError('JOB_DELETED')
@@ -129,6 +143,8 @@ class BatchConfirmation:
      invalid=['TITLE_APPROVED','FINAL_RENDERED','QA_DONE','FINAL_APPROVED']+(['TTS_DONE','ALIGNMENT','SUBTITLE'] if row['batch_resume_phase']=='SCRIPT' else [])
      db.execute('DELETE FROM checkpoints WHERE job_id=? AND item IN (?,?) AND stage IN ('+','.join('?' for _ in invalid)+')',(id,rank,str(int(rank)),*invalid))
     self.commit(db,j,b,data,'TITLES',updates,stages)
+   self.observe(j,updates,'WAITING_TITLE_APPROVAL')
+   if getattr(self.manager,'confirmation_wait',None):self.manager.confirmation_wait.confirmed(id)
    if hasattr(self.manager,'resume_job_after_user_action'):self.manager.resume_job_after_user_action(id)
    return dict(replayed=False)
  def titles(self,id,data):
@@ -149,12 +165,16 @@ class BatchConfirmation:
     if c['voiceover_mode']!='MUSIC_ONLY':check(script(x),target_language(j),require_metadata=True)
     candidates=c['titles']+([c['custom_title']] if c['custom_title'] else []);t=next((t for t in candidates if str(t.get('id'))==str(choices[x['rank']])),None)
     if not valid_title(t,j):raise ValueError('BATCH_TITLE_REQUIRED')
+    from .production_preflight import require_title
+    require_title(j,x,t['text'])
     snap=lambda t:{k:t[k] for k in ('id','text','text_zh','language','angle') if k in t}
     title=snap(t);response=copy.deepcopy(x['copy']);response['titles']=[snap(t) for t in c['titles']+([c['custom_title']] if title['id']==4 else [])]
     updates[x['rank']]=dict(x,copy=response,title_candidates=response['titles'],content_titles=None,selected_title_id=title['id'],batch_selected_title_id=title['id'],title=title['text'],final_title=title,final_title_language=title['language'],title_text_zh=title['text_zh'],title_status='USER_APPROVED',content_confirmed=True,content_confirmed_at=time.time(),content_edit=False,status='QUEUED',issues=[],review_reason=None,review_required=False,waiting_reason=None,current_owner='SYSTEM',user_action_status='NONE',resume_pending=True,resume_running=False,production_policy='AUTO_PRODUCTION_V1',resume_phase=x.get('batch_resume_phase','TITLE'))
     stages.append((x['rank'],'TITLE_APPROVED',title))
    with self.store.connect() as db:
     db.execute('BEGIN IMMEDIATE');self.commit(db,j,b,data,'RUNNING',updates,stages)
+   self.observe(j,updates,'QUEUED')
+   if getattr(self.manager,'confirmation_wait',None):self.manager.confirmation_wait.confirmed(id)
    if hasattr(self.manager,'resume_job_after_user_action'):self.manager.resume_job_after_user_action(id)
    else:self.manager.enqueue_batch(id,[(rank,x['resume_phase']) for rank,x in updates.items()])
    return dict(replayed=False)

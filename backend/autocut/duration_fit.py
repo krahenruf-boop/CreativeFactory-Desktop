@@ -12,7 +12,7 @@ VERSION='DURATION_FIT_V1'
 
 def solve(visual,voice,task=None,music_only=False):
  if not all(isinstance(n,(int,float)) and math.isfinite(n) and n>0 for n in (visual,voice)):raise ValueError('DURATION_INPUT_INVALID')
- task=task or {};v=1.;a=1.;usable=math.floor(visual*30)/30
+ task=task or {};v=1.;a=1.;usable=math.floor(visual*30+1e-7)/30
  # Frame-ceiling retains the last phoneme, including the exact 1.50x boundary.
  required=voice if not music_only else usable
  ratio=required/usable

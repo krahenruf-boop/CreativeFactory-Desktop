@@ -73,7 +73,7 @@ class InstructionTests(unittest.TestCase):
   s=resolve(raw,'本任务',CTX);o=s['resolved_overrides_json']
   self.assertNotIn('output_count',o);self.assertFalse(o['values']['allow_propainter']);self.assertEqual(o['values']['audio_speed_preference'],1.15);self.assertEqual(o['values']['title_duration'],5.);self.assertIn('REFERENCE_NOT_FOUND',s['instruction_issues']);self.assertTrue(effective(s,3)['cta_enabled']);self.assertFalse(effective(s,2)['cta_enabled'])
   c=dict(CTX,mode='Remix',usage_scope='internal_training_research',reference={'rows':[{'编号':'W4','pt-BR':'Olha isso'}]})
-  s=resolve(raw,'本任务',c);self.assertEqual(s['resolved_overrides_json']['output_count'],5);self.assertTrue(effective(s,1)['allow_propainter']);self.assertEqual(effective(s,1)['reference_selector'],'W4')
+  s=resolve(raw,'本任务',c);self.assertEqual(s['resolved_overrides_json']['output_count'],5);self.assertFalse(effective(s,1)['allow_propainter']);self.assertEqual(effective(s,1)['reference_selector'],'W4')
  def test_missing_item_reference_does_not_inherit_global_selector(self):
   context=dict(CTX,reference={'rows':[{'id':'W4'}]})
   result=resolve({'overrides':{'values':{'reference_selector':'W4'},'per_item_overrides':[{'rank_start':3,'rank_end':3,'values':{'reference_selector':'W99'}}]}},'第3条W99',context)

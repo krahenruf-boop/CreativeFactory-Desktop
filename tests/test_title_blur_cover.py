@@ -17,9 +17,50 @@ class TitleCoverTests(unittest.TestCase):
  def test_01_normal_title_untouched(self):
   e={'text_layers':[{'kind':'title','start':0,'end':5}]};old=copy.deepcopy(e);apply_layers(self.p,e,self.folder);self.assertEqual(e,old)
   self.assertNotIn('title_blur_white_cover',plan_payload(self.p))
- def test_02_clear_or_colored_cards_not_whitened(self):
-  self.assertIsNone(prepare(self.p,dict(self.r,kind='INTACT_TITLE')))
+ def test_02_intact_white_card_uses_its_whole_lifetime(self):
+  cover=prepare(self.p,dict(self.r,kind='INTACT_TITLE',source_interval=[0,7.8]))
+  self.assertEqual(cover['intervals'],[[0,6.24]]) # actual video speed, not the 5s Hook
+  self.assertEqual(cover['timing_reason'],'PERSISTENT_SOURCE_CARD_REPLACEMENT')
+  self.assertIsNone(prepare(self.p,dict(self.r,kind='INTACT_TITLE',background='BACKGROUND')))
+  self.assertIsNone(prepare(self.p,dict(self.r,kind='INTACT_TITLE',background='COLORED_CARD')))
   self.assertIsNone(prepare(self.p,dict(self.r,background='COLORED_CARD')))
+ def test_15_intact_white_card_black_text_no_duplicate_hook(self):
+  self.r.update(kind='INTACT_TITLE',source_interval=[0,7.8])
+  bind(self.p,self.r);before=copy.deepcopy(self.p['visual'])
+  evidence={'text_layers':[{'kind':'title','start':0,'end':5},{'kind':'subtitle','start':0,'end':16}]}
+  apply_layers(self.p,evidence,self.folder)
+  cards=[x for x in evidence['text_layers'] if x['kind']==VERSION]
+  self.assertEqual(len(cards),1);self.assertEqual(cards[0]['foreground'],'#000000')
+  self.assertEqual(cards[0]['text'],self.p['title']);self.assertEqual(cards[0]['end'],6.24)
+  self.assertFalse(any(x['kind']=='title' for x in evidence['text_layers']))
+  self.assertEqual(self.p['visual'],before)
+ def test_16_title_revision_budget_is_bounded_and_item_scoped(self):
+  from autocut.title_blur_cover import revision_budget
+  from app.s3.headless_runtime import fingerprint,read,write
+  budget=self.folder/'budgets'/f'render_{fingerprint("02")}.json'
+  peer=self.folder/'budgets'/f'render_{fingerprint("03")}.json'
+  write(budget,dict(full_render_count=2));write(peer,dict(full_render_count=1))
+  revision_budget(self.folder,'02','explicit-revision')
+  self.assertEqual(read(budget)['full_render_count'],0)
+  self.assertEqual(read(self.folder/'title_cover/02/explicit-revision/render-budget-before.json')['full_render_count'],2)
+  write(budget,dict(full_render_count=2))
+  revision_budget(self.folder,'02','explicit-revision')
+  self.assertEqual(read(budget)['full_render_count'],2)
+  self.assertEqual(read(peer)['full_render_count'],1)
+ def test_17_only_old_budget_failure_can_resume_same_revision(self):
+  from autocut.title_blur_cover import request_repair
+  from app.s3.headless_runtime import fingerprint
+  manager=MagicMock();manager.lock=threading.RLock();manager.item_pending=set()
+  store=manager.store;store.lock=threading.RLock()
+  item=dict(rank='02',status='FAILED',issues=['FULL_RENDER_BUDGET_OR_REASON_REJECTED'],title_cover_repair_key=fingerprint(self.r),script_status='USER_APPROVED',title_status='USER_APPROVED',content_confirmed=True)
+  store.get.return_value=dict(id='job',items=[item])
+  request_repair(manager,'job','02',self.r)
+  manager.enqueue_item.assert_called_once_with('job','02',VERSION)
+  store.item.assert_called_once_with('job','02',title_cover_budget_resume=True)
+  manager.enqueue_item.reset_mock();manager.item_pending.add(('job','02'))
+  request_repair(manager,'job','02',self.r);manager.enqueue_item.assert_not_called()
+  manager.item_pending.clear();item['issues']=['OUTPUT_QA_FAILED']
+  request_repair(manager,'job','02',self.r);manager.enqueue_item.assert_not_called()
  def test_03_exact_opaque_region_compact_dark_original_font(self):
   bind(self.p,self.r);m=raster(self.p,self.folder)
   with Image.open(m['layer']) as im:

@@ -75,7 +75,7 @@ def presented_job(job,home,model):
   item['script_text_zh']=item['final_script_zh']=current['text_zh'] if current else ''
   if item.get('copy',{}).get('localized_script'):
    item['copy']['localized_script']=show(item['copy']['localized_script']) or {}
-  for key,kind in [('script_candidates','SCRIPT'),('title_candidates','TITLE')]:item[key]=[r for r in (show(c,kind) for c in item.get(key,[])) if r]
+  for key,kind in [('script_candidates','SCRIPT'),('title_candidates','TITLE')]:item[key]=[r for r in (show(c,kind) for c in (item.get(key) or [])) if r]
   chosen=show(title(item),'TITLE')
   item['final_title']=chosen;item['title']=chosen['text'] if chosen else None;item['title_text_zh']=chosen['text_zh'] if chosen else ''
  return j
@@ -87,10 +87,10 @@ def job_texts(job,rank=None,kind=None):
   if item.get('blocking_review'):continue # GET of legacy mistakes must never start paid work.
   candidates=[]
   if kind in (None,'script'):
-   candidates += item.get('script_candidates',[])
+   candidates += item.get('script_candidates') or []
    if script(item):candidates += [script(item)]
   if kind in (None,'title'):
-   candidates += item.get('title_candidates',[])
+   candidates += item.get('title_candidates') or []
    if title(item).get('text'):candidates += [title(item)]
   for r in candidates:
    if r.get('text'):rows.append(dict(r,id=text_key(r['text'],r.get('language') or language),language=r.get('language') or language,rank=item['rank']))

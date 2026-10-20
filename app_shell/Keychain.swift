@@ -1,6 +1,6 @@
 import Foundation
 import Security
-let allowed:Set<String>=["OPENAI_API_KEY","DEEPSEEK_API_KEY","ELEVENLABS_API_KEY","AUTOCUT_UPGRADE_TEST"]
+let allowed:Set<String>=["OPENAI_API_KEY","DEEPSEEK_API_KEY","ELEVENLABS_API_KEY","AUTOCUT_UPGRADE_TEST","FEISHU_APP_ID","FEISHU_APP_SECRET"]
 let data=FileHandle.standardInput.readDataToEndOfFile()
 do {
  let request=try JSONSerialization.jsonObject(with:data) as! [String:String]

@@ -6,7 +6,7 @@ Raw input never enters the copy/planning/rendering contexts after parsing.
 import copy, hashlib, json, math, re, threading, uuid
 from pathlib import Path
 from typing import Literal
-from pydantic import BaseModel, ConfigDict, Field, ValidationError
+from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator
 
 VERSION = 'AUTOCUT_TASK_INSTRUCTION_V1'
 FORBIDDEN = 'CUSTOM_INSTRUCTION_FORBIDDEN_ACTION'
@@ -30,16 +30,19 @@ class Strict(BaseModel):
         return schema
 
 class OverrideValues(Strict):
+    source_title_overlay_policy: Literal['WHITE_CARD_TITLE_AVOID_STICKERS_V1'] | None = None
+    source_frame_mode: Literal['WIDTH_FIT_BLUR_V1','WIDTH_FIT_SLIGHT_NARROW_BLUR_V1'] | None = None
     copy_style: Literal['natural','hard_sell','emotional','source_faithful','concise'] | None = None
     localization_style: Literal['local_colloquial','natural'] | None = None
     title_direction: list[Literal['pain','benefit','emotion','curiosity','promotion']] | None = None
     title_enabled: bool | None = None
     title_duration: float | None = None
+    title_max_lines: Literal[2,3] | None = None
     title_position_adjustment: Literal['up','down','default'] | None = None
     subtitle_position_adjustment: Literal['up','down','default'] | None = None
     subtitle_size_adjustment: Literal['smaller','larger','default'] | None = None
     cta_enabled: bool | None = None
-    cta_position_preference: Literal['left','right','default'] | None = None
+    cta_position_preference: Literal['left','default'] | None = None
     watermark_mode_override: Literal['auto','handled'] | None = None
     allow_propainter: bool | None = None
     video_pace: Literal['normal','slightly_fast','slightly_slow'] | None = None
@@ -51,6 +54,12 @@ class OverrideValues(Strict):
     reference_selector: str | None = Field(default=None, pattern=r'^[A-Za-z0-9_-]{1,32}$')
     promotion_intensity: Literal['normal','strong','hard_sell'] | None = None
     retain_source_title: bool | None = None
+
+    @field_validator('cta_position_preference',mode='before')
+    @classmethod
+    def fixed_cta_side(cls,value):
+        # Read old saved preferences without restoring the retired right side.
+        return 'left' if value=='right' else value
 
 class ItemOverride(Strict):
     rank_start: int = Field(ge=1, le=500)
@@ -131,6 +140,7 @@ def resolve(result, raw, context):
     if forbidden_intent(raw) and not re.search(r'(?i)(CTA|箭头|字幕|标题|口播|文案|节奏|速度|水印|混剪|搬运)',raw):
         out={'values':{},'per_item_overrides':[]}
     def bound(v):
+        if 'cta_position_preference' in v:v['cta_position_preference']='left'
         for k,lo,hi in [('title_duration',1.,5.),('video_speed_preference',.9,1.25),('audio_speed_preference',.9,1.15)]:
             if k in v:
                 n=max(lo,min(hi,v[k]))
@@ -142,8 +152,8 @@ def resolve(result, raw, context):
             v['reference_selector']=None;v['script_reference_mode']='smart';issues.append('REFERENCE_NOT_FOUND')
         if v.get('script_reference_mode')=='prefer_original' and not context.get('reference',{}).get('rows'):
             v['script_reference_mode']='smart';issues.append('REFERENCE_NOT_FOUND')
-        # Permission to consider an algorithm cannot enable a production backend.
-        if v.get('allow_propainter') is True and context.get('usage_scope') not in {'training_research','internal_training_research'}:
+        # Retain old stored fields for compatibility, but never enable the removed engine.
+        if v.get('allow_propainter') is True:
             v['allow_propainter']=False;issues.append(PARTIAL)
         return v
     out['values']=bound(out['values'])
@@ -160,15 +170,17 @@ def resolve(result, raw, context):
     if status=='INVALID':issues.append('CUSTOM_INSTRUCTION_INVALID')
     return dict(custom_instruction_raw=raw,custom_instruction_status=status,resolved_overrides_json=out,instruction_version=VERSION,instruction_issues=issues,instruction_summary=summary(out,issues))
 
-LABELS={'copy_style':'口播','localization_style':'本土化','title_direction':'标题','title_enabled':'新增标题','title_duration':'标题时长','title_position_adjustment':'标题位置','subtitle_position_adjustment':'字幕位置','subtitle_size_adjustment':'字幕大小','cta_enabled':'新增CTA箭头','cta_position_preference':'CTA位置','watermark_mode_override':'水印','allow_propainter':'研究修复','video_pace':'节奏','video_speed_preference':'视频速度偏好','audio_speed_preference':'音频速度偏好','remove_redundant_sections':'删除冗余','preserve_source_structure':'保留原结构','script_reference_mode':'文案表','reference_selector':'参考编号','promotion_intensity':'营销强度','retain_source_title':'保留原标题'}
-WORDS={'natural':'自然','hard_sell':'强硬广','emotional':'强情绪','source_faithful':'贴近原稿','concise':'更简短','local_colloquial':'本地口语','pain':'强痛点','benefit':'强卖点','emotion':'强情绪','curiosity':'好奇','promotion':'促销','up':'稍微上移','down':'稍微下移','default':'预设位置','smaller':'稍小','larger':'稍大','left':'左侧','right':'右侧','auto':'自动判断','handled':'已提前处理','normal':'正常','slightly_fast':'稍快','slightly_slow':'稍慢','smart':'智能参考','prefer_original':'优先原文案','strong':'较强'}
+LABELS={'source_title_overlay_policy':'白底字幕覆盖与贴图避让','source_frame_mode':'非竖屏画幅','copy_style':'口播','localization_style':'本土化','title_direction':'标题','title_enabled':'新增标题','title_duration':'标题时长','title_max_lines':'标题行数','title_position_adjustment':'标题位置','subtitle_position_adjustment':'字幕位置','subtitle_size_adjustment':'字幕大小','cta_enabled':'新增CTA箭头','cta_position_preference':'CTA位置','watermark_mode_override':'水印','allow_propainter':'研究修复','video_pace':'节奏','video_speed_preference':'视频速度偏好','audio_speed_preference':'音频速度偏好','remove_redundant_sections':'删除冗余','preserve_source_structure':'保留原结构','script_reference_mode':'文案表','reference_selector':'参考编号','promotion_intensity':'营销强度','retain_source_title':'保留原标题'}
+WORDS={'WHITE_CARD_TITLE_AVOID_STICKERS_V1':'白底字幕持续覆盖，普通标题5秒并避开贴图','WIDTH_FIT_BLUR_V1':'左右贴边居中，同帧模糊底板','natural':'自然','hard_sell':'强硬广','emotional':'强情绪','source_faithful':'贴近原稿','concise':'更简短','local_colloquial':'本地口语','pain':'强痛点','benefit':'强卖点','emotion':'强情绪','curiosity':'好奇','promotion':'促销','up':'稍微上移','down':'稍微下移','default':'预设位置','smaller':'稍小','larger':'稍大','left':'左侧','right':'右侧','auto':'自动判断','handled':'已提前处理','normal':'正常','slightly_fast':'稍快','slightly_slow':'稍慢','smart':'智能参考','prefer_original':'优先原文案','strong':'较强'}
+WORDS['WIDTH_FIT_SLIGHT_NARROW_BLUR_V1']='完整保留画面，略窄竖屏自动垂直铺满并模糊补边'
 def summary(out,issues=()):
     def lines(values,prefix=''):
         rows=[]
         for k,v in values.items():
+            if k=='cta_position_preference' and v is not None:v='left'
             if type(v)is bool:text='开启' if v else '关闭'
             elif isinstance(v,list):text=' / '.join(WORDS.get(x,x) for x in v)
-            elif isinstance(v,(int,float)):text=f'{v:g}'+('秒' if k=='title_duration' else '×')
+            elif isinstance(v,(int,float)):text=f'{v:g}'+('秒' if k=='title_duration' else '行' if k=='title_max_lines' else '×')
             elif v is None:continue
             else:text=WORDS.get(v,v)
             rows.append(prefix+LABELS[k]+'：'+text)
@@ -184,6 +196,7 @@ def effective(job,rank):
     obj=job.get('resolved_overrides_json') or {};values=copy.deepcopy((job.get('product_profile') or {}).get('task_defaults',{}));values.update(copy.deepcopy(obj.get('values',{})))
     for item in obj.get('per_item_overrides',[]):
         if item['rank_start']<=int(rank)<=item['rank_end']:values.update(item['values'])
+    if 'cta_position_preference' in values:values['cta_position_preference']='left'
     return OverrideValues.model_validate(values).model_dump(exclude_none=True)
 
 def effective_sources(job,rank):
@@ -224,7 +237,7 @@ def decision_override(decision,v):
         if key in v:
             d[position]=({'up':.14,'down':.20,'default':.17} if position=='title_y' else {'up':.73,'down':.81,'default':.78})[v[key]];d['override_reason']='OTHER'
     if 'cta_enabled'in v:d['cta_enabled']=v['cta_enabled']
-    if v.get('cta_position_preference')in {'left','right'}:d['cta_side']=v['cta_position_preference']
+    d['cta_side']='left'
     return d
 
 class InstructionService:

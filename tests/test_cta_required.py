@@ -34,6 +34,30 @@ class CTARequiredTests(unittest.TestCase):
   self.p['task_overrides']['cta_enabled']=True;ensure_plan(self.p)
   self.assertEqual(self.p['cta_policy']['origin'],'USER_EXPLICIT_ON')
 
+ def test_legacy_right_decision_and_override_are_always_normalized_left(self):
+  from autocut.cta_policy import LEFT_ANCHOR,POSITION_POLICY
+  from autocut.task_instructions import decision_override,effective
+  self.p['visual']['cta']['anchor_x']=.834
+  self.p['task_overrides']['cta_position_preference']='right'
+  ensure_plan(self.p);check_plan(self.p)
+  self.assertEqual(self.p['visual']['cta']['anchor_x'],LEFT_ANCHOR)
+  self.assertEqual(self.p['cta_policy']['position_policy'],POSITION_POLICY)
+  self.assertEqual(decision_override({'cta_side':'right'},{'cta_position_preference':'right'})['cta_side'],'left')
+  self.assertEqual(effective({'product_profile':{'task_defaults':{'cta_position_preference':'right'}}},'01')['cta_position_preference'],'left')
+
+ def test_cached_or_tampered_right_plan_is_rejected_before_render(self):
+  ensure_plan(self.p)
+  for anchor,motion in [(.834,False),(.85,False),(.166,True)]:
+   p=copy.deepcopy(self.p);p['visual']['cta'].update(anchor_x=anchor,horizontal_motion=motion)
+   with self.assertRaisesRegex(ValueError,'CTA_LEFT_REQUIRED'):check_plan(p)
+
+ def test_right_arrow_never_repaired_by_adding_second_arrow(self):
+  ensure_plan(self.p)
+  with patch('autocut.cta_policy.verify',return_value={'status':'FAIL','issues':['CTA_RIGHT_FORBIDDEN']}),patch('autocut.cta_policy.overlay_only') as overlay:
+   with self.assertRaisesRegex(ValueError,'CTA_RIGHT_REQUIRES_RERENDER'):
+    verify_or_repair(self.p,'old',self.folder,'new')
+   overlay.assert_not_called()
+
  def test_transport_remix_music_all_markets(self):
   for mode in ['Transport','Remix']:
    for voice in ['TTS','MUSIC_ONLY']:
@@ -70,8 +94,9 @@ class CTARequiredTests(unittest.TestCase):
   self.assertTrue(self.p['visual']['cta']['enabled'])
 
  def test_source_arrow_verified_in_final_window_retained(self):
+  from autocut.cta_policy import LEFT_ANCHOR,MATCHER_VERSION
   self.p['source_arrow_hint']=True;ensure_plan(self.p)
-  with patch('autocut.cta_policy.subprocess.run'),patch('autocut.cta_policy.verify',return_value={'status':'PASS','output_sha256':'pixels'}):
+  with patch('autocut.cta_policy.subprocess.run'),patch('autocut.cta_policy.verify',return_value={'status':'PASS','output_sha256':'pixels','anchor':LEFT_ANCHOR,'right_matched_frames':0,'matcher':MATCHER_VERSION}):
    self.assertTrue(retain_source_arrow(self.p,self.folder))
   self.assertFalse(self.p['visual']['cta']['enabled']);self.assertTrue(required(self.p));check_plan(self.p)
   self.p['video_speed']=1.5

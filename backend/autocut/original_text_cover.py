@@ -50,6 +50,9 @@ def map_interval(plan, start, end):
 
 def canvas_box(plan, region):
     """Mirror the renderer's scale-to-fill and central crop, not a stretch."""
+    from .source_frame import canvas_box as fitted_box
+    fitted = fitted_box(plan, region)
+    if fitted is not None:return fitted
     sw,sh=plan['source']['width'],plan['source']['height'];w,h=plan['visual']['canvas']
     scale=max(w/sw,h/sh);dx=(sw*scale-w)/2;dy=(sh*scale-h)/2
     l,t,r,b=region

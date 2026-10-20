@@ -1,6 +1,8 @@
 # Creative Factory Desktop
 
-Private source and deployment repository for Creative Factory 0.1.17 (schema 3).
+Public source and deployment repository for Creative Factory (schema 3).
+The current source includes the latest local workflow improvements; the packaged
+Engine and runtime remain pinned to 0.1.17 until a separately verified release.
 The company Mac runs independently of Codex, a Work conversation, and the developer Mac.
 
 - [Company Mac deployment and update](docs/COMPANY_MAC.md)

@@ -11,8 +11,10 @@ from .ownership import require_action,item_state,digest
 from .script_language import script,check,script_fields,target_language,detect_script_language,NAMES,VERSION
 from .copy_presentation import chinese
 from .provider_models import job_models
+from .title_style import GUIDANCE as TITLE_GUIDANCE
+from .task_instructions import effective
 
-ERRORS={'CONTENT_NOT_READY':'脚本还未准备完成，请更换脚本或稍后重试','CONTENT_TITLE_REQUIRED':'请选择一个可用标题','CONTENT_TRANSLATION_REQUIRED':'中文对照暂不可用，请重试','TITLE_GENERATION_FAILED':'标题生成失败，原有标题已保留','CONTENT_BUSY':'正在准备内容，请稍后','CUSTOM_TITLE_INVALID':'请输入标题（最多 300 字）'}
+ERRORS={'CONTENT_NOT_READY':'脚本还未准备完成，请更换脚本或稍后重试','CONTENT_TITLE_REQUIRED':'请选择一个可用标题','CONTENT_TRANSLATION_REQUIRED':'中文对照暂不可用，原有标题和输入已保留','TITLE_LANGUAGE_MISMATCH':'标题语言检查未通过，原有标题和输入已保留','TITLE_GENERATION_FAILED':'标题生成失败，原有标题已保留','CONTENT_BUSY':'正在准备内容，请稍后','CUSTOM_TITLE_INVALID':'请输入标题（最多 300 字）'}
 class Titles(Strict):titles:list[Bilingual]=Field(min_length=3,max_length=3)
 class CustomTitle(Strict):title:Bilingual
 
@@ -29,6 +31,13 @@ def content_view(j,x,cache=None):
   model=job_models(j)['deepseek'];spoken=cache.row(spoken,model)
   titles=[cache.row(t,model) for t in titles]
   if custom:custom=cache.row(custom,model)
+ # A finished artifact already owns its render/QA evidence. History reads must
+ # not refill the title-layout cache. Reopening content re-enables all checks;
+ # the real approval methods also validate the selected title independently.
+ finished=x.get('status')=='PASS' and bool(x.get('output')) and not d and not x.get('content_edit') and not x.get('operation_inflight')
+ from .production_preflight import title_check
+ for t in titles+([custom] if custom else []):
+  t['preflight']=dict(status='NOT_APPLICABLE',reason='COMPLETED_ARTIFACT') if finished else title_check(j,x,t.get('text',''))
  return dict(script=None if music else spoken,voiceover_mode='MUSIC_ONLY' if music else 'VOICEOVER',titles=titles,custom_title=custom,default_title_id=(x.get('selected_title_id') if x.get('content_edit') and any(str(t.get('id'))==str(x.get('selected_title_id')) for t in titles) else (titles[0].get('id') if titles else None)),source=(d or {}).get('source') or x.get('script_source'),draft_id=(d or {}).get('id'),title_generation=x.get('title_generation',0))
 
 class ContentConfirmation:
@@ -40,9 +49,17 @@ class ContentConfirmation:
   return get_item(self.store,id,rank)[1]
  def title_request(self,j,x,text=None):
   language=target_language(j);custom=text is not None;schema=CustomTitle if custom else Titles
-  prompt=('Localize one custom video title into the target market language. If input is already in that language, keep it exactly (trim whitespace only). ' if custom else 'Generate exactly three distinct compact TikTok video titles for THIS item only. A is recommended. Return no script. Use a fresh angle compared to previous titles. ')
+  if custom and detect_script_language(text)==language:
+   # Reuse only an exact, validated comparison in the same language/model.
+   # This prepares a draft; it never selects or approves the title for the user.
+   cached=self.translations.cache.get(text.strip(),language,job_models(j)['deepseek'])
+   if cached:
+    row=check(dict(text=text.strip(),text_zh=cached,language=language),language,'TITLE',require_metadata=True)
+    return [dict(row,id=4,angle='custom')]
+  prompt=('Localize one custom video title into the target market language. If input is already in that language, keep it exactly (trim whitespace only). ' if custom else 'Generate exactly three distinct natural TikTok video hooks for THIS item only. A is recommended. Return no script. Use fresh ideas compared to previous titles. ')
+  if not custom:prompt+=TITLE_GUIDANCE
   prompt+='OUTPUT LANGUAGE: '+NAMES.get(language,language)+'. Return language, text, text_zh for each title. text_zh is a faithful, natural Chinese comparison, with no new claims. Never put Chinese in target text. Return JSON matching: '+json.dumps(schema.model_json_schema(),ensure_ascii=False)
-  context=dict(target_language=language,product=j.get('product_name'),script=(content_view(j,x)['script'] or {}).get('text',''),analysis=x.get('analysis',{}),previous_titles=content_view(j,x)['titles'],generation=x.get('title_generation',0)+1)
+  context=dict(target_language=language,product=j.get('product_name'),script=(content_view(j,x)['script'] or {}).get('text',''),analysis=x.get('analysis',{}),previous_titles=content_view(j,x)['titles'],generation=x.get('title_generation',0)+1,task_overrides=effective(j,x['rank']))
   if custom:context['input_title']=text
   adapter=self.translations.adapter()
   try:out=adapter.complete(job_models(j)['deepseek'],[dict(role='system',content=prompt),dict(role='user',content=json.dumps(context,ensure_ascii=False))],max_tokens=2400)['data']
@@ -76,6 +93,11 @@ class ContentConfirmation:
   except Exception as e:
    self.store.item(id,rank,status=x['status'],operation_inflight=False)
    if str(e)=='STALE_ACTION':raise
+   from .runtime_insights import diagnostic,record
+   record(self.store.home/'jobs'/id/'work',dict(kind='CONTENT_PREPARATION_FAILED',
+       stage='CUSTOM_TITLE' if text is not None else 'TITLE_CANDIDATES',item=str(rank),
+       input_fingerprint=digest([target_language(j),text,job_models(j)['deepseek']]),diagnostic=diagnostic(e)))
+   if str(e) in {'CONTENT_TRANSLATION_REQUIRED','TITLE_LANGUAGE_MISMATCH'}:raise
    raise ValueError('TITLE_GENERATION_FAILED') from e
   return get_item(self.store,id,rank)[1]
  def approve(self,id,rank,data):
@@ -89,6 +111,8 @@ class ContentConfirmation:
    if not title:raise ValueError('CONTENT_TITLE_REQUIRED')
    title=check(title,language,'TITLE',require_metadata=True)
    if not chinese(title.get('text_zh')):raise ValueError('CONTENT_TRANSLATION_REQUIRED')
+   from .production_preflight import require_title
+   require_title(j,x,title['text'])
    spoken={k:spoken[k] for k in ('text','text_zh','language')}
    def title_snapshot(t):return {k:t[k] for k in ('id','text','text_zh','language','angle') if k in t}
    title=title_snapshot(title)
@@ -110,6 +134,8 @@ class ContentConfirmation:
     db.execute('DELETE FROM checkpoints WHERE job_id=? AND item IN (?,?) AND stage IN ('+','.join('?' for _ in invalid)+')',(id,str(int(rank)),x['rank'],*invalid))
     for stage,value in [('FINAL_SCRIPT_LANGUAGE_CHECK',dict(status='EXEMPT_MUSIC_ONLY' if music else 'PASS',language=language)),('SCRIPT_APPROVED',spoken),('TITLE_APPROVED',title)]:
      db.execute('INSERT OR REPLACE INTO checkpoints VALUES(?,?,?,?,?)',(id,stage,str(rank),digest(value),json.dumps(value,ensure_ascii=False)))
+   from .runtime_insights import transition
+   transition(self.store.home,id,x['rank'],x['status'],row['status'],j.get('production_preflight_policy'))
    self.manager.enqueue_item(id,rank,'SCRIPT' if changed else 'TITLE')
   audit(self.store,id,rank,'CONTENT_APPROVED',script_changed=bool(changed),title=title,invalidated=invalid,old_output_preserved=fields['previous_output'])
   return get_item(self.store,id,rank)[1]

@@ -6,6 +6,7 @@ from typing import Literal
 from pydantic import Field
 from .drivers import Strict
 from .context import RES
+from .file_storage import supplement_directory,copy_verified
 from app.s3.headless_runtime import sha,read,write
 from app.s3.headless_media import probe
 
@@ -51,22 +52,23 @@ def import_media(home,id,path,kind='video'):
  source=Path(path).resolve(strict=True)
  allowed={'.mp4','.mov','.m4v','.webm'} if kind=='video' else {'.mp3','.wav','.m4a'}
  if not source.is_file() or source.suffix.lower() not in allowed or source.stat().st_size>500*1024**2:raise ValueError('SUPPLEMENT_MEDIA_INVALID')
- before=sha(source);folder=Path(home)/'jobs'/id/'work'/('supplements' if kind=='video' else 'music');folder.mkdir(parents=True,exist_ok=True)
+ before=sha(source);folder=supplement_directory(id) if kind=='video' else Path(home)/'jobs'/id/'work/music';folder.mkdir(parents=True,exist_ok=True)
  # Content-addressed intake is idempotent, including retries after app restart.
  dest=folder/(before+source.suffix.lower())
- if not dest.exists():shutil.copy2(source,dest)
+ copy_verified(source,dest)
  result=inspect_media(dest,kind)
  if before!=result['sha256'] or sha(source)!=before:raise ValueError('SOURCE_HASH_CHANGED')
  return dict(result,id=dest.stem,source_url=None,source_file=str(source),video_id=dest.stem,download_status='READY')
 
 def base_clips(source,decision,task):
- if source.get('remix_clips'):return copy.deepcopy(source['remix_clips'])
+ from .source_library import trim_clips
+ if source.get('remix_clips'):return trim_clips(source['remix_clips'])
  ranges=decision.get('keep_ranges') if task.get('remove_redundant_sections') else None
  ranges=ranges or [[0,source['duration']]];last=0;clips=[]
  for lo,hi in ranges:
   if not all(type(n) in (int,float) and math.isfinite(n) for n in (lo,hi)) or not last<=lo<hi<=source['duration'] or hi-lo<.5:raise ValueError('CUSTOM_INSTRUCTION_RANGE_INVALID')
   clips.append(dict(path=source['path'],sha256=source['sha256'],source_start=lo,source_end=hi,source_duration=source['duration'],source_rank=source['rank'],reason='Existing source ranges'));last=hi
- return clips
+ return trim_clips(clips,{source['sha256']:source.get('source_health') or {}})
 
 def resolve_supplements(source,decision,task,plan,media,script):
  clips=base_clips(source,decision,task);total=sum(c['source_end']-c['source_start'] for c in clips)
@@ -80,7 +82,7 @@ def resolve_supplements(source,decision,task,plan,media,script):
   # Never repeat a range to manufacture time. Only unretimed approved sections here.
   if abs(c.target_duration-(hi-lo))>.04 or any(lo<b and a<hi for a,b in seen.get(m['id'],[])):raise ValueError('SUPPLEMENT_PLAN_INVALID')
   if sha(m['path'])!=m['sha256']:raise ValueError('SOURCE_HASH_CHANGED')
-  seen.setdefault(m['id'],[]).append((lo,hi));inserts.append((c.insert_position,dict(path=m['path'],sha256=m['sha256'],source_start=lo,source_end=hi,source_duration=m['duration'],source_rank=m['id'],reason=c.reason)))
+  seen.setdefault(m['id'],[]).append((lo,hi));inserts.append((c.insert_position,dict(path=m['path'],sha256=m['sha256'],source_start=lo,source_end=hi,source_duration=m['duration'],source_rank=m['id'],reason=c.reason,**({'source_health':m['source_health']} if m.get('source_health') else {}))))
  result=[];cursor=0
  for clip in clips:
   end=cursor+clip['source_end']-clip['source_start'];local=cursor
@@ -90,7 +92,8 @@ def resolve_supplements(source,decision,task,plan,media,script):
   if end>local:result.append(dict(clip,source_start=clip['source_start']+local-cursor))
   cursor=end
  if any(c['source_end']-c['source_start']<.3 for c in result):raise ValueError('SUPPLEMENT_PLAN_INVALID')
- return result
+ from .source_library import trim_clips
+ return trim_clips(result)
 
 def duration_check(audio_duration,clips,task=None,music_only=False):
  from .duration_fit import solve

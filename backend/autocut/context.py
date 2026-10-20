@@ -6,6 +6,8 @@ ENGINE=RES/'engine'
 os.environ['AUTOCUT_ENGINE_DATA']=str(HOME/'user_assets')
 os.environ['PATH']=str(RES/'runtime/media/bin')+':'+os.environ.get('PATH','/usr/bin:/bin')
 sys.path.insert(0,str(ENGINE))
+from .runtime_insights import install as install_operational_evidence
+install_operational_evidence()
 def asset():
  row=json.loads((ENGINE/'assets/cta/current.json').read_text());src=ENGINE/'assets/cta'/row['file_path'];dst=HOME/'user_assets/cta_assets'/src.name;dst.parent.mkdir(parents=True,exist_ok=True)
  if not dst.exists():shutil.copy2(src,dst)

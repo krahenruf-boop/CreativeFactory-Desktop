@@ -27,6 +27,21 @@ s=s.replace("    if mode=='titles_only':", '''    prompt += '\\nCOPY_PRESENTATIO
     if mode=='titles_only':''',1)
 p.write_text(s)
 
+# Explicit montage black-border repair; original source files remain unchanged.
+from parallel_tasks_compatibility import apply as apply_parallel_tasks
+apply_parallel_tasks(E)
+
+from montage_frame_compatibility import apply as apply_montage_frame
+apply_montage_frame(E)
+from source_frame_compatibility import apply as apply_source_frame
+apply_source_frame(E)
+
+# Keep approved emoji in title rasters without replacing the frozen word font.
+from symbol_font_compatibility import apply as apply_symbol_font
+apply_symbol_font(E)
+from source_title_overlay_compatibility import apply as apply_source_title_overlay
+apply_source_title_overlay(E)
+
 # Evidence-bound title blur cover: a packaging raster adapter, not an overlay
 # algorithm rewrite. The normal visual preset and mother engine remain intact.
 p=E/'app/s3/headless_media.py';s=p.read_text()
@@ -69,6 +84,13 @@ p=E/'app/s3/experimental_propainter.py';s=p.read_text()
 s=s.replace("self.python = self.root / '.venv-propainter/bin/python'", "self.python = Path(os.environ['AUTOCUT_RESOURCES']) / 'bin/propainter-python'")
 s=s.replace("self.cli = self.root / '.venv-propainter/bin/propainter-delogo'", "self.cli = Path(os.environ['AUTOCUT_RESOURCES']) / 'bin/propainter-delogo'")
 s=s.replace("self.upstream = self.root / 'tools/third_party/propainter-delogo/third_party/ProPainter'", "self.upstream = Path(os.environ['AUTOCUT_RESOURCES']) / 'third_party/propainter-delogo/third_party/ProPainter'")
+# Keep historical stage names readable; the removed engine cannot run.
+if "raise ValueError('PROPAINTER_REMOVED')" not in s:
+ s=s.replace('    if spec.get(\'usage_scope\') not in SCOPES:',
+             "    raise ValueError('PROPAINTER_REMOVED')\n    if spec.get('usage_scope') not in SCOPES:")
+p.write_text(s)
+p=E/'app/s3/overlay_policy.py';s=p.read_text()
+s=s.replace('ALLOW_EXPERIMENTAL_PROPAINTER = True', 'ALLOW_EXPERIMENTAL_PROPAINTER = False')
 p.write_text(s)
 # Distinct driver labels carry identical approval semantics; legacy engine cache IDs remain intact.
 print('Packaging path/locale compatibility applied to staging only')
@@ -97,6 +119,15 @@ p.write_text(s)
 p=E/'prompts/DEEPSEEK_TIKTOK_BR_BATCH_V1.txt';s=p.read_text()
 s += '\nCOPY_PRESENTATION_ZH_V1: The result.localized_script and every result.titles entry also require text_zh, a faithful complete Simplified Chinese translation. text must use that item context.language (pt-BR, es-MX), overriding the Brazil examples above. Chinese is metadata only; never add it to text. No extra or stronger claims in translation.\n'
 p.write_text(s)
+
+# Subtitles remain above the arrow, including when their pixels overlap.
+from cta_text_layers import apply as apply_cta_text_layers
+apply_cta_text_layers(E)
+
+# User-trained hooks: no word quota or forced angle slots. Only the copied
+# engine is patched; source snapshots and existing approved titles stay intact.
+from title_style_compatibility import apply as apply_title_style
+apply_title_style(E)
 
 # 0.1.15 automatic QA: technical integrity remains mandatory; ordinary visual
 # warnings are explicit policy evidence instead of fabricated all-true checks.

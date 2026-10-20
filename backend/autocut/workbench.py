@@ -1,6 +1,6 @@
 from .script_language import target_language,detect_script_language,check,script,script_fields,VERSION
 """Small task interaction contracts. No media algorithm or provider implementation."""
-import copy, hashlib, json, time, uuid
+import copy, hashlib, json, math, time, uuid
 from enum import Enum
 from pathlib import Path
 from typing import Literal
@@ -11,6 +11,8 @@ from .task_instructions import OverrideValues, resolve, summary, digest
 
 class ScriptMode(str,Enum):
  AUTO='AUTO';TABLE_SELECTED='TABLE_SELECTED';EXISTING='EXISTING';REQUIRE_APPROVAL='REQUIRE_APPROVAL'
+
+SCRIPT_ASSIGNMENT_POLICY='LENGTH_DURATION_V1'
 
 TAG_INTENTS={
  'pain':('强痛点',{'title_direction':['pain']}),'benefit':('强卖点',{'title_direction':['benefit']}),
@@ -83,6 +85,8 @@ def save_preset(store,payload):
  return store.save_product(dict(old,**p))
 
 def table_scripts(reference,market):
+ if reference.get('source_type')=='feishu':
+  return copy.deepcopy(reference.get('script_rows',[]))
  language='es-MX' if market=='Mexico' else 'pt-BR';rows=[]
  for idx,row in enumerate(reference.get('rows',[]),1):
   def cell(keys,exclude=()):
@@ -117,25 +121,83 @@ def existing_scripts(store,product,market,preset_id=None):
 def script_snapshot(data,store):
  mode=ScriptMode(data.get('script_mode','AUTO'));data['script_mode']=mode.value
  if mode==ScriptMode.TABLE_SELECTED:
-  rows=table_scripts(data.get('reference',{}),data['market']);selected=next((r for r in rows if r['id']==data.get('script_reference_id')),None)
-  if not selected:raise ValueError('SCRIPT_SELECTION_INVALID')
-  data['reference_file_id']=digest(data['reference']);data['script_snapshot']=TranslationCache(store.home).row(selected,store.settings()['deepseek_model'])
+  rows={r['id']:r for r in table_scripts(data.get('reference',{}),data['market'])}
+  ids=data.get('script_reference_ids')
+  if ids is None:ids=[data.get('script_reference_id')]
+  if not ids or any(i not in rows for i in ids):raise ValueError('SCRIPT_SELECTION_INVALID')
+  ids=list(dict.fromkeys(ids));cache=TranslationCache(store.home);model=store.settings()['deepseek_model']
+  data['script_reference_ids']=ids;data['script_reference_id']=ids[0]
+  data['reference_file_id']=digest(data['reference'])
+  data['script_snapshots']=[cache.row(rows[i],model) for i in ids]
+  data['script_snapshot']=copy.deepcopy(data['script_snapshots'][0])
+  if len(ids)>1:data['script_assignment_policy']=SCRIPT_ASSIGNMENT_POLICY
  elif mode==ScriptMode.EXISTING:
   rows=existing_scripts(store,data['product_name'],data['market'],data['product_profile_id']);selected=next((r for r in rows if r['id']==data.get('existing_script_id')),None)
   if not selected:raise ValueError('SCRIPT_SELECTION_INVALID')
   data['script_snapshot']=TranslationCache(store.home).row(selected,store.settings()['deepseek_model'])
  return data
 
-def selected_context(c,job):
- c=copy.deepcopy(c);script=job.get('script_snapshot')
+def assign_scripts(job,sources):
+ """Freeze length-to-duration matching once, after probing the actual videos.
+
+ Old jobs keep their original mapping. Fewer scripts are reused in adjacent
+ duration bands; excess scripts are sampled across the selected length range.
+ """
+ if job.get('script_assignment_policy')!=SCRIPT_ASSIGNMENT_POLICY or job.get('script_assignments'):return {}
+ pool=job.get('script_snapshots') or []
+ if len(pool)<2:return {}
+ videos=[]
+ for source in sources:
+  if source.get('status','VALID')!='VALID':continue
+  duration=source.get('duration')
+  if not isinstance(duration,(int,float)) or not math.isfinite(duration) or duration<=0:raise ValueError('SCRIPT_ASSIGNMENT_DURATION_INVALID')
+  videos.append((float(duration),int(source['rank'])))
+ if not videos:return {}
+ videos.sort()
+ # Only the spoken candidate counts, never its Chinese translation/metadata.
+ lengths={r['id']:sum(not c.isspace() for c in r['text']) for r in pool}
+ ordered=sorted(pool,key=lambda r:lengths[r['id']])
+ assignments={}
+ for index,(duration,rank) in enumerate(videos):
+  slot=0 if len(videos)==1 else (index*(len(ordered)-1)*2+len(videos)-1)//(2*(len(videos)-1))
+  row=ordered[slot] if len(videos)>1 else pool[0]
+  assignments[f'{rank:02}']=dict(script_id=row['id'],reference_id=row.get('reference_id'),character_count=lengths[row['id']],source_duration=duration)
+ return dict(script_assignments=assignments)
+
+def selected_script(job,rank=1):
+ pool=job.get('script_snapshots') or []
+ assigned=(job.get('script_assignments') or {}).get(f'{int(rank):02}')
+ if assigned:
+  row=next((r for r in pool if r['id']==assigned['script_id']),None)
+  if row is None:raise ValueError('SCRIPT_SELECTION_INVALID')
+  return copy.deepcopy(row)
+ if job.get('script_assignment_policy')==SCRIPT_ASSIGNMENT_POLICY:return None
+ return copy.deepcopy(pool[(int(rank)-1)%len(pool)] if pool else job.get('script_snapshot'))
+
+def selected_context(c,job,rank=1):
+ c=copy.deepcopy(c);script=selected_script(job,rank)
  if script:
   c['clean_script']=script['text'];c['source_script']=script['text'];c['source_language']=script.get('language') or 'unknown'
   c['video_context']+='\nUse the user-selected script as the primary copy. Localize only as needed for the market, visual facts and duration; do not replace its structure. Selected reference: '+json.dumps(script,ensure_ascii=False)[:3500]
-  c['script_group_id']=digest([c['script_group_id'],script])
+  assignment=(job.get('script_assignments') or {}).get(f'{int(rank):02}')
+  if assignment:c['target_duration_seconds']=assignment['source_duration']
+  c['script_group_id']=digest([c['script_group_id'],script,assignment['source_duration']]) if assignment else digest([c['script_group_id'],script])
  return c
+
+def selected_contexts(contexts,mapping,job):
+ # Split a shared analysis group when its output ranks use different scripts.
+ originals={c['script_group_id']:c for c in contexts};groups={};assigned={}
+ for rank,group in mapping.items():
+  c=selected_context(originals[group],job,rank);key=c['script_group_id']
+  groups.setdefault(key,c);assigned[rank]=key
+ return list(groups.values()),assigned,groups
 
 def approval_contexts(contexts,job):
  # Content confirmation starts with the best localized source script.
+ if job.get('production_preflight_policy')=='PRODUCTION_PREFLIGHT_V1':
+  from .production_preflight import COPY_POLICY
+  contexts=copy.deepcopy(contexts)
+  for context in contexts:context['video_context']=context['video_context'][:6000-len(COPY_POLICY)-1]+'\n'+COPY_POLICY
  return contexts
 
 def copy_candidates(copies,group):

@@ -20,15 +20,20 @@ class RemixDecision(BaseModel):
  model_config=ConfigDict(extra='forbid',allow_inf_nan=False)
  outputs:list[RemixOutput]=Field(min_length=1,max_length=30)
 
-def remix_items(selection,sources,analyses,count):
+def remix_items(selection,sources,analyses,count,selling_points_primary=False):
  """Resolve rank-only model output into trusted paths; do not accept arbitrary files."""
  by_rank={s['rank']:s for s in sources if s['rank'] in analyses}
  if len(by_rank)<2:raise ValueError('REMIX_NEEDS_SOURCES')
- result=RemixDecision.model_validate(selection)
+ # Checkpoints carry trusted audit metadata beside the bounded model payload.
+ # Keep rejecting unknown payload fields, including any model-provided paths.
+ payload={k:v for k,v in selection.items() if k not in {'driver_provenance','source_arrow_hint','subject_protection'}}
+ result=RemixDecision.model_validate(payload)
  if sorted(o.rank for o in result.outputs)!=list(range(1,count+1)):raise ValueError('REMIX_PLAN_INVALID')
  items=[];mapped={};seen=set()
  for o in sorted(result.outputs,key=lambda o:o.rank):
-  if o.primary_source_rank not in by_rank or not analyses[o.primary_source_rank]['clean_script'].strip():raise ValueError('REMIX_PLAN_INVALID')
+  if o.primary_source_rank not in by_rank:raise ValueError('REMIX_PLAN_INVALID')
+  primary_analysis=analyses[o.primary_source_rank]
+  if not primary_analysis['clean_script'].strip() and not (selling_points_primary and primary_analysis.get('selling_points') and primary_analysis.get('context')):raise ValueError('REMIX_PLAN_INVALID')
   used={c.source_rank for c in o.clips}
   if len(used)<2 or not used.issubset(by_rank) or o.primary_source_rank not in used:raise ValueError('REMIX_PLAN_INVALID')
   clips=[];ranges={}
@@ -37,7 +42,9 @@ def remix_items(selection,sources,analyses,count):
    if c.end>s['duration'] or c.end-c.start<.5:raise ValueError('REMIX_PLAN_INVALID')
    if any(c.start<b and a<c.end for a,b in ranges.get(c.source_rank,[])):raise ValueError('REMIX_PLAN_INVALID')
    ranges.setdefault(c.source_rank,[]).append((c.start,c.end))
-   clips.append(dict(source_rank=c.source_rank,path=s['path'],sha256=s['sha256'],source_duration=s['duration'],source_start=c.start,source_end=c.end,reason=c.reason))
+   clips.append(dict(source_rank=c.source_rank,path=s['path'],sha256=s['sha256'],source_duration=s['duration'],source_start=c.start,source_end=c.end,reason=c.reason,**({'source_health':s['source_health']} if s.get('source_health') else {})))
+  from .source_library import trim_clips
+  clips=trim_clips(clips)
   signature=tuple((c['sha256'],c['source_start'],c['source_end']) for c in clips)
   if signature in seen:raise ValueError('REMIX_PLAN_INVALID')
   seen.add(signature)

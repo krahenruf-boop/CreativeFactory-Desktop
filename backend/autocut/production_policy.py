@@ -9,6 +9,8 @@ LAYOUT_REPAIR={'CTA_OUT_OF_CANVAS','CTA_SUBTITLE_COLLISION','CTA_TITLE_COLLISION
 def classify(result,technical=False):
  codes=[str(c) for c in result.get('issues',[])];error=result.get('error')
  if error:codes.append(error)
+ if not technical and codes and set(codes)=={'CTA_SUBTITLE_COLLISION'} and result.get('product_preserved') is not False:
+  return dict(status='WARNING',issues=codes,reason='Subtitles are composited above CTA; overlap is allowed.',evidence=result,policy=VERSION)
  # Legacy false flags remain blocking until re-reviewed with explicit severity.
  # A partial overlap is not evidence that the product is unusable.
  severity=result.get('severity')

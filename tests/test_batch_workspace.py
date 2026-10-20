@@ -123,4 +123,19 @@ class BatchTests(unittest.TestCase):
   self.assertEqual(self.store.get(self.id)['state'],'RUNNING');self.assertEqual(item_state(self.store,self.store.get(self.id),self.rows()[1])['current_owner'],'SYSTEM');m.queue.shutdown()
 
  def test_35_failed_preparation_is_actionable_not_infinite_analysis(self):
-  self.store.update(self.id,state='REVIEW_REQUIRED');self.store.item(self.id,3,status='WAITING',issues=['NO_RELIABLE_SCRIPT']);self.assertEqual(self.view()['label'],'需要处理');self.assertFalse(self.view()['all_scripts_ready']);self.assertEqual(self.public()['items'][2]['current_owner'],'USER')
+  self.store.update(self.id,state='REVIEW_REQUIRED');self.store.item(self.id,3,status='REVIEW_REQUIRED',final_script=None,localized_script=None,copy={},script_candidates=[],issues=['NO_RELIABLE_SCRIPT'])
+  before=self.store.get(self.id);b=self.view();j=self.public()
+  self.assertEqual(b['label'],'口播待补齐');self.assertEqual(j['ui_status'],'口播待补齐');self.assertEqual(b['script_ready_count'],2);self.assertFalse(b['all_scripts_ready']);self.assertEqual(b['allowed_actions'],[])
+  self.assertEqual(b['items'][2]['script_error'],'暂无可用口播，请更换脚本');self.assertEqual(j['items'][2]['current_owner'],'USER');self.assertIn('CHANGE_SCRIPT',j['items'][2]['allowed_actions'])
+  self.assertEqual(self.submit('scripts').status_code,400);self.assertEqual(self.store.get(self.id),before);self.assertEqual(self.queue.enqueued,[])
+ def test_36_missing_title_keeps_title_barrier_without_failure(self):
+  self.scripts();self.store.item(self.id,3,title_candidates=[],content_titles=[],copy={**self.rows()[2]['copy'],'titles':[]});before=self.store.get(self.id);b=self.view()
+  self.assertEqual(b['label'],'标题待补齐');self.assertEqual(b['title_ready_count'],2);self.assertFalse(b['all_titles_ready']);self.assertEqual(b['allowed_actions'],[])
+  self.assertEqual(self.submit('titles').status_code,400);self.assertEqual(self.store.get(self.id),before);self.assertEqual(self.queue.enqueued,[])
+ def test_37_production_failure_still_visible(self):
+  self.store.update(self.id,state='REVIEW_REQUIRED',batch_review_required=False,batch_review=dict(phase='RUNNING',ranks=['01','02','03']))
+  for n in [1,2,3]:self.store.item(self.id,n,status='REVIEW_REQUIRED',content_edit=False,issues=['FFMPEG_RENDER_FAILED'])
+  self.assertEqual(self.view()['label'],'失败');self.assertEqual(self.public()['ui_status'],'失败')
+ def test_38_preparing_script_is_still_analysis(self):
+  self.store.update(self.id,state='RUNNING');self.store.item(self.id,3,status='SCRIPTING',final_script=None,localized_script=None,copy={},script_candidates=[])
+  self.assertEqual(self.view()['label'],'分析中');self.assertEqual(self.view()['allowed_actions'],[])

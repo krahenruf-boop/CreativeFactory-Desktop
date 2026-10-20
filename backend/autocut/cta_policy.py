@@ -11,7 +11,10 @@ from app.s3.headless_runtime import sha,write
 from app.s3.visual_preset import load_preset,normalize_cta
 
 VERSION='CTA_REQUIRED_V1'
-MATCHER_VERSION='CTA_PIXELS_V2'
+MATCHER_VERSION='CTA_PIXELS_V3_LEFT_ONLY'
+POSITION_POLICY='CTA_LEFT_ONLY_V1'
+# Measured boundary correction for the frozen artwork (nominal centre 15%).
+LEFT_ANCHOR=.166
 
 
 def required(plan):
@@ -24,23 +27,24 @@ def ensure_plan(plan):
     enabled=required(plan);c=copy.deepcopy(preset);c['asset']=old.get('asset') or (asset() if enabled else {})
     # Preserve the frozen artwork's measured boundary correction. The red body
     # remains 16% wide; its side flashes are not mistaken for the arrow body.
-    pos=preset.get('asset_layout_override',{}).get('chosen_position',[.15,.65])
-    side='right' if old.get('anchor_x',.15)>.5 else 'left'
-    if plan.get('task_overrides',{}).get('cta_position_preference') in {'left','right'}:
-        side=plan['task_overrides']['cta_position_preference']
-    c.update(anchor_x=1-pos[0] if side=='right' else pos[0],anchor_y=pos[1],
+    # Global user policy outranks stale model decisions, presets and old jobs.
+    # Collisions never authorize a horizontal move; captions stay above CTA.
+    pos=preset.get('asset_layout_override',{}).get('chosen_position',[LEFT_ANCHOR,.65])
+    c.update(anchor_x=LEFT_ANCHOR,anchor_y=pos[1],
         start=max(0,plan['target_duration']-5),end=plan['target_duration'],enabled=enabled)
     visual['cta']=c
     plan.pop('cta_retained_evidence',None)
     visual['overrides']=[o for o in visual.get('overrides',[]) if o['layer']!='cta']
-    visual['overrides'].append(dict(layer='cta',override_reason='PRODUCT_OCCLUSION' if side=='right' else 'CTA_SUBTITLE_COLLISION',
-        default_position=[preset['anchor_x'],preset['anchor_y']],chosen_position=[c['anchor_x'],c['anchor_y']],detail='Existing frozen artwork boundary correction'))
+    visual['overrides'].append(dict(layer='cta',override_reason='CTA_SUBTITLE_COLLISION',
+        default_position=[preset['anchor_x'],preset['anchor_y']],chosen_position=[c['anchor_x'],c['anchor_y']],detail='Fixed left side; existing frozen artwork boundary correction'))
     visual['visual_preset_override']=True
     revision=visual.setdefault('user_revision',{})
     revision['omit_added_cta']=not enabled
     if revision.get('reason')=='Task instruction or existing source arrow; source pixels preserved':revision.pop('reason')
-    plan['cta_policy']=dict(version=VERSION,required=enabled,origin='USER_EXPLICIT_OFF' if not enabled else 'USER_EXPLICIT_ON' if plan.get('task_overrides',{}).get('cta_enabled') is True else 'DEFAULT_ON')
+    plan['cta_policy']=dict(version=VERSION,required=enabled,layer_order='BELOW_TEXT',subtitle_overlap='ALLOWED',origin='USER_EXPLICIT_OFF' if not enabled else 'USER_EXPLICIT_ON' if plan.get('task_overrides',{}).get('cta_enabled') is True else 'DEFAULT_ON')
+    plan['cta_policy']['position_policy']=POSITION_POLICY
     plan.setdefault('resolved_parameters',{})['cta_enabled']=dict(value=enabled,source=plan['cta_policy']['origin'])
+    plan['resolved_parameters']['cta_side']=dict(value='left',source=POSITION_POLICY)
     if enabled:
         path=Path(c['asset']['file_path'])
         if not path.is_file() or sha(path)!=c['asset']['sha256']:raise ValueError('CTA_ASSET_UNAVAILABLE')
@@ -50,8 +54,12 @@ def ensure_plan(plan):
 def check_plan(plan):
     if not required(plan):return
     c=plan.get('visual',{}).get('cta') or {}
+    if (abs(c.get('anchor_x',-1)-LEFT_ANCHOR)>.0001 or c.get('horizontal_motion') is not False):
+        raise ValueError('CTA_LEFT_REQUIRED')
     proof=plan.get('cta_retained_evidence') or {}
     retained=(proof.get('status')=='PASS' and proof.get('source_sha256')==plan['source']['sha256']
+        and proof.get('anchor')==LEFT_ANCHOR and proof.get('right_matched_frames')==0
+        and proof.get('matcher')==MATCHER_VERSION
         and proof.get('timeline')==source_timeline(plan))
     if c.get('enabled') is not True and not retained:raise ValueError('CTA_PLAN_REQUIRED')
     if not c.get('asset') or not Path(c['asset']['file_path']).is_file():raise ValueError('CTA_ASSET_UNAVAILABLE')
@@ -132,6 +140,7 @@ def verify(plan,video,folder):
     folder=Path(folder);folder.mkdir(parents=True,exist_ok=True)
     if not required(plan):
         result=dict(status='NOT_REQUIRED',reason='USER_EXPLICIT_OFF',output_sha256=sha(video));write(folder/'cta-qa.json',result);return result
+    check_plan(plan)
     s=sprite(plan,folder);info=json.loads(subprocess.check_output([str(RES/'runtime/media/bin/ffprobe'),'-v','error','-show_streams','-of','json',str(video)]))
     v=next(x for x in info['streams'] if x['codec_type']=='video');duration=float(v['duration']);start=max(0,duration-5)
     w=540;h=round(int(v['height'])*w/int(v['width']));scale=w/plan['visual']['canvas'][0]
@@ -147,6 +156,8 @@ def verify(plan,video,folder):
         captions.append((layer['start'],layer['end'],ink))
     cmd=[str(RES/'runtime/media/bin/ffmpeg'),'-v','error','-ss',str(start),'-i',str(video),'-an','-vf',f'fps=30,scale={w}:{h}','-f','rawvideo','-pix_fmt','rgb24','pipe:1']
     rows=[];first=math.ceil(start*30-1e-3)/30;size=w*h*3
+    # Cover both historical right-side centres, including the pre-correction .85.
+    right_xs={round(w*a-reference.width/2) for a in (1-LEFT_ANCHOR,.85)}
     with (folder/'decode.log').open('wb') as log:
         proc=subprocess.Popen(cmd,stdout=subprocess.PIPE,stderr=log)
         try:
@@ -154,29 +165,35 @@ def verify(plan,video,folder):
                 if len(data)!=size:raise ValueError('CTA_DECODE_FAILED')
                 n=len(rows);t=first+n/30;frame=Image.frombytes('RGB',(w,h),data)
                 x=round(s['x']*scale);y=round((s['base_y']+s['amplitude_px']*math.sin(2*math.pi*(t-start)/s['period']))*scale)
-                best=(0,0,0,0,0,0)
-                for dx in (-2,0,2):
-                    for dy in (-2,0,2):
-                        crop=frame.crop((x+dx,y+dy,x+dx+template.width,y+dy+template.height))
-                        body,edge=template,outline
-                        for lo,hi,ink in captions:
-                            if lo<=t<hi:
-                                uncovered=ImageChops.invert(ink.crop((x+dx,y+dy,x+dx+template.width,y+dy+template.height)))
-                                body=ImageChops.multiply(body,uncovered);edge=ImageChops.multiply(edge,uncovered)
-                        if body.histogram()[255]<template.histogram()[255]*.8:continue
-                        iou,red,white=artwork_score(crop,body,edge)
-                        score=min(red/.92,white/.70)
-                        if score>best[0]:best=(score,dx,dy,iou,red,white)
-                rows.append(dict(time=round(t,4),iou=round(best[3],4),red_recall=round(best[4],4),outline_recall=round(best[5],4),matched=best[0]>=1,dx=best[1],dy=best[2]))
+                def match_at(left,top=y):
+                    best=(0,0,0,0,0,0)
+                    for dx in (-2,0,2):
+                        for dy in (-2,0,2):
+                            box=(left+dx,top+dy,left+dx+template.width,top+dy+template.height)
+                            crop=frame.crop(box);body,edge=template,outline
+                            for lo,hi,ink in captions:
+                                if lo<=t<hi:
+                                    uncovered=ImageChops.invert(ink.crop(box))
+                                    body=ImageChops.multiply(body,uncovered);edge=ImageChops.multiply(edge,uncovered)
+                            if body.histogram()[255]<max(50,template.histogram()[255]*.10):continue
+                            iou,red,white=artwork_score(crop,body,edge);score=min(red/.92,white/.70)
+                            if score>best[0]:best=(score,dx,dy,iou,red,white)
+                    return best
+                best=match_at(x)
+                right_ys={y,round(y+(.65-plan['visual']['cta']['anchor_y'])*h)}
+                right=any(match_at(rx,ry)[0]>=1 for rx in right_xs for ry in right_ys)
+                rows.append(dict(time=round(t,4),iou=round(best[3],4),red_recall=round(best[4],4),outline_recall=round(best[5],4),matched=best[0]>=1,dx=best[1],dy=best[2],right_matched=right))
                 if n in {4,45,90,140}:frame.save(folder/f'frame-{n:03}.jpg',quality=95)
         finally:
             proc.stdout.close()
             if proc.poll() is None:proc.wait(timeout=30)
     expected=round((duration-first)*30);bad=[r for r in rows if not r['matched']]
     ok=proc.returncode==0 and len(rows)>=expected-1 and len(rows)>0 and len(bad)<=max(1,len(rows)*.02)
-    result=dict(status='PASS' if ok else 'FAIL',issues=[] if ok else ['CTA_MISSING'],output=str(video),output_sha256=sha(video),
+    right_frames=sum(r['right_matched'] for r in rows)
+    issues=([] if ok else ['CTA_MISSING'])+(['CTA_RIGHT_FORBIDDEN'] if right_frames else [])
+    result=dict(status='PASS' if not issues else 'FAIL',issues=issues,output=str(video),output_sha256=sha(video),
         start=start,end=duration,frames=len(rows),matched_frames=len(rows)-len(bad),minimum_iou=min((r['iou'] for r in rows),default=0),
-        matcher=MATCHER_VERSION,samples=rows,asset_sha256=s['source_sha256'],anchor=plan['visual']['cta']['anchor_x'],y=plan['visual']['cta']['anchor_y'])
+        matcher=MATCHER_VERSION,position_policy=POSITION_POLICY,right_matched_frames=right_frames,samples=rows,asset_sha256=s['source_sha256'],anchor=plan['visual']['cta']['anchor_x'],y=plan['visual']['cta']['anchor_y'])
     write(folder/'cta-qa.json',result);return result
 
 
@@ -208,6 +225,8 @@ def overlay_only(plan,base,output,folder):
 def verify_or_repair(plan,video,folder,repair_output,allow_repair=True):
     before=verify(plan,video,Path(folder)/'before')
     if before['status'] in {'PASS','NOT_REQUIRED'}:return dict(output=str(video),output_sha256=sha(video),cta_verification=before,repaired=False)
+    # Painting a second arrow would leave the old right arrow in the MP4.
+    if 'CTA_RIGHT_FORBIDDEN' in before.get('issues',[]):raise ValueError('CTA_RIGHT_REQUIRES_RERENDER')
     if not allow_repair:raise ValueError('CTA_RENDER_FAILED')
     plan['visual']['cta']['enabled']=True;plan.pop('cta_retained_evidence',None)
     plan['visual'].setdefault('user_revision',{})['omit_added_cta']=False

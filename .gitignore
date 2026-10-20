@@ -44,8 +44,10 @@ __pycache__/
 # Legacy local diagnostic scripts remain on the development Mac, not in releases.
 /scripts/*
 !/scripts/build.py
+!/scripts/dev_server.py
 !/scripts/build_icons.swift
 !/scripts/compatibility.py
+!/scripts/title_style_compatibility.py
 !/scripts/stage_engine.py
 !/scripts/build_autocut_app.sh
 !/scripts/*company*
@@ -53,3 +55,9 @@ __pycache__/
 !/scripts/export_engine_snapshot.py
 !/scripts/prepare_runtime_distribution.py
 !/scripts/publish_release.py
+
+# Optional Feishu task integration setup, without an App build.
+!/scripts/feishu_tasks_keychain.swift
+!/scripts/setup_feishu_tasks.py
+!/docs/FEISHU_TASKS.md
+!/manifests/dependencies-feishu.json

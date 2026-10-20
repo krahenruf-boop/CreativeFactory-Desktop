@@ -2,7 +2,9 @@ import hashlib,json,sqlite3,threading,time,uuid,unicodedata
 from datetime import datetime
 from zoneinfo import ZoneInfo
 from pathlib import Path
+from contextlib import contextmanager
 from .provider_models import MODEL_DEFAULTS,selected_models
+from .title_policy import POLICY as TITLE_POLICY
 
 def stamp():return time.time()
 def product_name(value):
@@ -44,10 +46,14 @@ class Store:
   for id,name,market in [('general','通用 · 按素材分析','Brazil'),('eye','凝胶眼影棒','Brazil'),('cream','瞬效紧致眼霜','Brazil'),('bag','MX 高端手机包','Mexico'),('belt','H标腰带扣','Brazil'),('brow','四色染眉膏','Brazil')]:
    if id in self.settings().get('deleted_preset_ids',[]):continue
    with self.connect() as db:db.execute('INSERT OR IGNORE INTO product_profiles VALUES(?,?)',(id,json.dumps(dict(id=id,product_name=name,market=market,language='es-MX' if market=='Mexico' else 'pt-BR',usage_scope='production',voice_preferences={'female':'m151rjrbWXbBqyq56tly'},marketing='Retain source-authorized promotions and effects; never invent facts.'))))
-  for k,v in {'ai_driver':'auto','title_approval':'auto','watermark':'auto','open_output':True,**{p+'_model':v for p,v in MODEL_DEFAULTS.items()}}.items():
+  for k,v in {'ai_driver':'auto','title_approval':'auto','watermark':'auto','open_output':True,'title_layout_policy':TITLE_POLICY,**{p+'_model':v for p,v in MODEL_DEFAULTS.items()}}.items():
    with self.connect() as db:db.execute('INSERT OR IGNORE INTO app_settings VALUES(?,?)',(k,json.dumps(v)))
+ @contextmanager
  def connect(self):
-  c=sqlite3.connect(self.path,timeout=30);c.row_factory=sqlite3.Row;return c
+  c=sqlite3.connect(self.path,timeout=30);c.row_factory=sqlite3.Row
+  try:
+   with c:yield c
+  finally:c.close()
  def settings(self):
   with self.connect() as d:return {r['id']:json.loads(r['data']) for r in d.execute('SELECT * FROM app_settings')}
  def set_setting(self,key,value):
@@ -80,6 +86,8 @@ class Store:
    naming=self.next_name(request.get('product_name',''),db,now);data.update(naming)
    db.execute('INSERT OR REPLACE INTO job_sequences VALUES(?,?,?)',(naming['product_name'].casefold(),naming['name_date'],naming['name_sequence']))
    db.execute('INSERT INTO jobs(id,request_id,state,data,created,updated) VALUES(?,?,?,?,?,?)',(id,request['request_id'],'QUEUED',json.dumps(data,ensure_ascii=False),now,now))
+  from .runtime_insights import transition
+  transition(self.home,id,'job',None,'QUEUED',data.get('production_preflight_policy'))
   return self.get(id),True
  def by_request(self,request_id):
   with self.connect() as db:row=db.execute('SELECT id FROM jobs WHERE request_id=?',(request_id,)).fetchone()
@@ -98,6 +106,8 @@ class Store:
   with self.lock,self.connect() as db:
    row=db.execute('SELECT state,data FROM jobs WHERE id=?',(id,)).fetchone();data=json.loads(row['data']);data.update(fields)
    db.execute('UPDATE jobs SET state=?,data=?,updated=? WHERE id=?',(state or row['state'],json.dumps(data,ensure_ascii=False),stamp(),id))
+   from .runtime_insights import transition
+   transition(self.home,id,'job',row['state'],state or row['state'],data.get('production_preflight_policy'))
  def item(self,id,rank,**fields):
   rank=f'{int(rank):02}'
   with self.lock,self.connect() as db:
@@ -107,6 +117,9 @@ class Store:
     assert_final(self,self.get(id),data,previous)
    if any(k not in {'presentation_zh','presentation_warnings'} for k in fields):data['action_revision']=data.get('action_revision',0)+1
    db.execute('INSERT OR REPLACE INTO job_items VALUES(?,?,?)',(id,rank,json.dumps(data,ensure_ascii=False)))
+   from .runtime_insights import transition
+   job=json.loads(db.execute('SELECT data FROM jobs WHERE id=?',(id,)).fetchone()[0])
+   transition(self.home,id,rank,previous,data['status'],job.get('production_preflight_policy'))
  def checkpoint(self,id,stage,item,input_sha):
   with self.connect() as db:r=db.execute('SELECT input_sha,data FROM checkpoints WHERE job_id=? AND stage=? AND item IN (?,?) ORDER BY length(item) DESC LIMIT 1',(id,stage,str(item),f'{int(item):02}' if str(item).isdigit() and len(str(item))<=2 else str(item))).fetchone()
   return json.loads(r['data']) if r and r['input_sha']==input_sha else None

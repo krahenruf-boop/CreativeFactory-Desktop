@@ -57,6 +57,9 @@ class RemixTests(unittest.TestCase):
    a={i:dict(clean_script='source text',context='product in hand',selling_points=['compact'],allowed_claims=['compact'],overlays_need_review=False,existing_arrow=False) for i in [1,2]}
    selection=dict(outputs=[dict(rank=1,primary_source_rank=1,angle='demonstration',clips=[dict(source_rank=i,start=0,end=3,reason='product') for i in [1,2]])])
    items,_=remix_items(selection,sources,a,1);plan=dict(target_duration=5.6,source_ranges=[[0,6]],video_speed=1.1)
+   audited=dict(selection,driver_provenance={'actual_driver':'codex'},source_arrow_hint=False,subject_protection={})
+   self.assertEqual(remix_items(audited,sources,a,1)[0],items)
+   with self.assertRaises(ValueError):remix_items(dict(audited,path='/untrusted/video.mp4'),sources,a,1)
    apply_montage(plan,items[0]);validate_montage(plan);self.assertEqual(len(plan['montage_segments']),2);self.assertNotIn('source_ranges',plan)
    self.assertAlmostEqual(plan['montage_segments'][-1]['output_end'],5.6)
    bad=copy.deepcopy(selection);bad['outputs'][0]['clips'][1]['source_rank']=99
